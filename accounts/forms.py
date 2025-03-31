@@ -12,7 +12,7 @@ class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, required=True, help_text='Required. Enter a valid email address.')
     first_name = forms.CharField(max_length=30, required=True, help_text='Required.')
     last_name = forms.CharField(max_length=30, required=True, help_text='Required.')
-    mobile_number = forms.CharField(max_length=15, required=False, help_text='Required. Enter a valid mobile number.')
+    mobile_number = forms.CharField(max_length=15, required=True, help_text='Required. Enter a valid mobile number.')
     
     class Meta:
         model = User
@@ -124,3 +124,9 @@ class CustomSetPasswordForm(SetPasswordForm):
         strip=False,
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
     )
+
+class OTPVerificationForm(forms.Form):
+    code = forms.CharField(max_length=6, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter 6-digit code'}))
+
+class MobileLoginForm(forms.Form):
+    mobile_number = forms.CharField(max_length=15, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your mobile number'}))

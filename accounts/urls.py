@@ -14,4 +14,7 @@ urlpatterns = [
     path('password-reset-confirm/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(),name='password_reset_confirm'),
     path('password-reset-complete/', views.CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
     path('delete-profile/', views.DeleteProfileView.as_view(), name='delete_profile'),
+    path('verify-phone/', views.OTPVerificationView.as_view(), name='verify_phone'),
+    path('mobile-login/', views.MobileLoginView.as_view(), name='mobile_login'),
+    path('verify-login-otp/', views.VerifyOTPLoginView.as_view(), name='verify_login_otp'),
 ]

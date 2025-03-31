@@ -39,7 +39,10 @@
                 </form>
             </div>
 
-            <!-- Add this section in the card-body -->
+            <div class="text-center my-3 border-top pt-3">
+                <p class="mb-0">Login with your mobile number instead? <a href="{% url 'mobile_login' %}">Click here</a></p>
+            </div>
+
             <div class="text-center my-3 border-top pt-3">
                 <p class="mb-2">Or login with:</p>
                 <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger">
