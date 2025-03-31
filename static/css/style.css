@@ -1,0 +1,16 @@
+.dropdown-menu {
+    min-width: 100px; 
+}
+
+.three-dot-btn {
+    transition: color 0.2s;
+}
+  
+.three-dot-btn:hover {
+    color: #9f9f9f; 
+}
+  
+.three-dot-btn:focus {
+    box-shadow: none;
+}
+

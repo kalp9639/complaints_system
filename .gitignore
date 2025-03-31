@@ -35,8 +35,8 @@ venv/
 
 # Ignore media and static files
 /media/
-static/
-staticfiles/
+# static/
+# staticfiles/
 
 # Ignore IDE/editor configurations
 .vscode/
