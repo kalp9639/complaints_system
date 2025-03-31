@@ -1,0 +1,24 @@
+{% load humanize %}
+{% load notification_tags %} {# Load the custom template tags #}
+
+<div class="list-group-item list-group-item-action {% if not notification.unread %} bg-light text-muted {% endif %} py-2 px-3 border-bottom">
+    <a href="{% url 'notification_redirect' notification.pk %}" class="text-decoration-none text-dark d-block">
+        {# --- START MODIFICATION --- #}
+        <div class="mb-1 small {% if notification.unread %}fw-bold{% endif %}">
+            {% if notification.action_object and notification.actor %}
+                {# Format for Status Updates (has action_object and actor) #}
+                <strong>Status update:</strong>
+                {# Use the template tag to display the status badge #}
+                {% status_badge notification.action_object.status %} –
+                {# Display who did the action and the simplified verb #}
+                {{ notification.actor.get_full_name|default:notification.actor.username }} {{ notification.verb }}
+
+            {% else %}
+                 {# Format for other notifications (e.g., Complaint Creation - no actor) #}
+                 {{ notification.verb }}
+            {% endif %}
+        </div>
+         {# --- END MODIFICATION --- #}
+        <small class="text-muted">{{ notification.timestamp|naturaltime }}</small>
+    </a>
+</div>

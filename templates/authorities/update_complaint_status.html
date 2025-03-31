@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Update Complaint Status - Complaint #{{ complaint.id }}</h2>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h4>Complaint Details</h4>
+                        <p><strong>Type:</strong> {{ complaint.get_complaint_type_display }}</p>
+                        <p><strong>Description:</strong> {{ complaint.description }}</p>
+                        <p><strong>Current Status:</strong> 
+                            <span class="badge 
+                                {% if complaint.status == 'Pending' %}bg-danger
+                                {% elif complaint.status == 'In Progress' %}bg-info
+                                {% elif complaint.status == 'Resolved' %}bg-success
+                                {% else %}bg-secondary{% endif %}">
+                                {{ complaint.status }}
+                            </span>
+                        </p>
+                        <p><strong>Submitted By:</strong> {{ complaint.user.get_full_name|default:complaint.user.username }}</p>
+                        <p><strong>Submitted On:</strong> {{ complaint.created_at|date:"d M Y, H:i" }}</p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                            <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.update_description.id_for_label }}" class="form-label">{{ form.update_description.label }}</label>
+                            {{ form.update_description }}
+                            {% if form.update_description.errors %}
+                            <div class="text-danger">{{ form.update_description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.proof_image.id_for_label }}" class="form-label">{{ form.proof_image.label }}</label>
+                            {{ form.proof_image }}
+                            {% if form.proof_image.errors %}
+                            <div class="text-danger">{{ form.proof_image.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Update Complaint</button>
+                        <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-secondary ml-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

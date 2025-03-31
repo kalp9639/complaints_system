@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Home - Civic Complaints System{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="mb-4">Welcome to the Civic Complaints System</h1>
+        
+        {% if not user.is_authenticated %}
+            <p class="lead">Report issues in your community to help make it a better place to live.</p>
+            <div class="mt-5">
+                <a href="{% url 'signup' %}" class="btn btn-primary btn-lg me-1">Citizen Sign Up</a>
+                <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg">Citizen Login</a>
+            </div>
+
+        {% elif is_official %}
+            <!-- Government Official's Home Page -->
+            <p class="lead">Manage and resolve complaints assigned to your ward.</p>
+            <div class="mt-5">
+                <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-primary btn-lg me-2">Go to Dashboard</a>
+                <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-primary btn-lg">View Assigned Complaints</a>
+            </div>
+
+        {% else %}
+            <!-- Normal User's Home Page -->
+            <p class="lead">Report issues in your community to help make it a better place to live.</p>
+            <div class="mt-5">
+                <p>You are logged in as <strong>{{ user.username }}</strong>.</p>
+                <a href="{% url 'submit_complaint' %}" class="btn btn-success btn-lg">Submit a Complaint</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if not user.is_authenticated %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Government Officials</h2>
+        <div class="d-flex justify-content-center">
+            <a href="{% url 'authorities:official_signup' %}" class="btn btn-primary btn-lg me-2">Official Sign Up</a>
+            <a href="{% url 'authorities:official_login' %}" class="btn btn-outline-primary btn-lg">Official Login</a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Types of Complaints We Handle</h2>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Garbage Issues</h3>
+                <p class="card-text">Report garbage dumping, uncollected waste, or sanitation concerns in your area.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Potholes</h3>
+                <p class="card-text">Report potholes, broken pavement, or other road damage that needs repair.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <h3 class="card-title">Cattle Issues</h3>
+                <p class="card-text">Report stray cattle on roads, damaged property, or other cattle-related issues.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

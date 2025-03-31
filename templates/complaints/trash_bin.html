@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Trash Bin - Civic Complaints System{% endblock %}
+{% block content %}
+{% load static %}
+{% load custom_filters %}
+
+<div class="container mt-10">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Trash Bin</h1>
+      <div class="d-flex gap-2">
+          <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary">Back to Complaints</a>
+      </div>
+  </div>
+
+  {% if trashed_complaints %}
+  <div class="alert alert-warning">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Complaints will be permanently deleted after 7 days in trash.
+      </div>
+      {% if trashed_complaints %}
+      <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#emptyTrashModal">
+        Empty Trash
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row">
+    {% for complaint in trashed_complaints %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card h-100">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{{ complaint.get_complaint_type_display }}</h5>
+          <div class="d-flex align-items-center">
+            <span class="badge bg-secondary me-3">Trashed</span>
+          </div>
+        </div>
+        {% if complaint.image %}
+        <img src="{{ complaint.image.url }}" class="card-img-top" alt="{{ complaint.get_complaint_type_display }} issue" style="height: 200px; object-fit: cover;">
+        {% else %}
+        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+          <p class="text-muted">No image available</p>
+        </div>
+        {% endif %}
+        <div class="card-body">
+          {% if complaint.description %}
+          <p class="card-text">{{ complaint.description|truncatechars:100 }}</p>
+          {% else %}
+          <p class="card-text text-muted">No description provided.</p>
+          {% endif %}
+          {% if complaint.ward_number %}
+          <p class="card-text"><small class="text-muted">Ward: {{ complaint.ward_number }}</small></p>
+          {% endif %}
+          <p class="card-text"><small class="text-danger">Will be deleted on: {{ complaint.trashed_at|add_days:7|date:"F j, Y" }}</small></p>
+        </div>
+        <div class="card-footer bg-transparent">
+          <div class="d-flex justify-content-between align-items-center">
+            <form action="{% url 'restore_complaint' complaint.pk %}" method="post" class="me-2">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-primary">Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ complaint.pk }}">
+              Delete Permanently
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal{{ complaint.pk }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ complaint.pk }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel{{ complaint.pk }}">Confirm Permanent Deletion</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p class="text-danger fw-bold">Warning! This action cannot be undone.</p>
+            <p>Are you sure you want to permanently delete this {{ complaint.get_complaint_type_display }} complaint?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form action="{% url 'delete_complaint' complaint.pk %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Delete Permanently</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Empty Trash Confirmation Modal -->
+  <div class="modal fade" id="emptyTrashModal" tabindex="-1" aria-labelledby="emptyTrashModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="emptyTrashModalLabel">Confirm Empty Trash</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-danger fw-bold">Warning! This action cannot be undone.</p>
+          <p>Are you sure you want to permanently delete all complaints in trash?</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form action="{% url 'empty_trash' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Empty Trash</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination controls if needed -->
+  {% if is_paginated %}
+  <nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+      </li>
+      {% endif %}
+      
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+      
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Next</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="alert alert-info">
+    <h4 class="alert-heading">Trash bin is empty!</h4>
+    <p>No complaints in trash. Trashed complaints will appear here.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

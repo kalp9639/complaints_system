@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Official Dashboard - Ward {{ official.ward_number }}</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card text-center mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Total Complaints</h5>
+                    <p class="card-text display-4">{{ total_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Complaints</h5>
+                    <p class="card-text display-4">{{ pending_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">In Progress</h5>
+                    <p class="card-text display-4">{{ in_progress_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Resolved</h5>
+                    <p class="card-text display-4">{{ resolved_complaints }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Quick Actions
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-primary mb-2 w-100">View Complaints</a>
+                    <a href="{% url 'authorities:authority_complaints_map' %}" class="btn btn-info mb-2 w-100">Complaints Map</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    Profile Information
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ official.user.get_full_name }}</p>
+                    <p><strong>Username:</strong> {{ official.user.username }}</p>
+                    <p><strong>Ward Number:</strong> {{ official.ward_number }}</p>
+                    <p><strong>Department:</strong> {{ official.department|default:'Not Specified' }}</p>
+                    <div class="mt-3">
+                        <a href="{% url 'authorities:edit_profile' %}" class="btn btn-outline-primary">Edit Profile</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

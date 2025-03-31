@@ -1,0 +1,42 @@
+<!-- templates/accounts/delete_profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}Delete Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h2 class="mb-0">Delete Profile</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning text-center">
+                        <strong>Warning:</strong> This action will permanently deactivate your account.
+                    </div>
+
+                    <p>By deleting your profile:</p>
+                    <ul>
+                        <li>Your account will be deactivated.</li>
+                        <li>You will no longer be able to log in.</li>
+                        <li>Your existing complaints and data will be preserved.</li>
+                    </ul>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">
+                                Confirm Profile Deletion
+                            </button>
+                            <a href="{% url 'profile' %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div> 
+            </div> 
+        </div>
+    </div>
+</div>
+{% endblock %}

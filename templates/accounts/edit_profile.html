@@ -1,0 +1,184 @@
+<!-- templates/edit_profile.html -->
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - Civic Complaints System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">Edit Profile</h2>
+            </div>
+            <div class="card-body">
+                {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">Username:</label>
+                        {{ form.username.errors }}
+                        <input type="text" name="{{ form.username.html_name }}" 
+                               value="{{ form.username.value|default:'' }}" 
+                               class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                               id="{{ form.username.id_for_label }}">
+                        {% if form.username.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.username.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label fw-bold">First Name:</label>
+                        {{ form.first_name.errors }}
+                        <input type="text" name="{{ form.first_name.html_name }}" 
+                               value="{{ form.first_name.value|default:'' }}" 
+                               class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" 
+                               id="{{ form.first_name.id_for_label }}">
+                        {% if form.first_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.first_name.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label fw-bold">Last Name:</label>
+                        {{ form.last_name.errors }}
+                        <input type="text" name="{{ form.last_name.html_name }}" 
+                               value="{{ form.last_name.value|default:'' }}" 
+                               class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" 
+                               id="{{ form.last_name.id_for_label }}">
+                        {% if form.last_name.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.last_name.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">Email:</label>
+                        {{ form.email.errors }}
+                        <input type="email" name="{{ form.email.html_name }}" 
+                               value="{{ form.email.value|default:'' }}" 
+                               class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                               id="{{ form.email.id_for_label }}">
+                        {% if form.email.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.email.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.mobile_number.id_for_label }}" class="form-label fw-bold">Mobile Number:</label>
+                        {{ form.mobile_number.errors }}
+                        <input type="tel" name="{{ form.mobile_number.html_name }}" 
+                            value="{{ form.mobile_number.value|default:'' }}" 
+                            class="form-control {% if form.mobile_number.errors %}is-invalid{% endif %}" 
+                            id="{{ form.mobile_number.id_for_label }}">
+                        {% if form.mobile_number.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.mobile_number.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Update Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h2 class="mb-0">Change Password</h2>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="change_password">
+                    
+                    <div class="mb-3">
+                        <label for="{{ password_form.old_password.id_for_label }}" class="form-label fw-bold">Current Password:</label>
+                        {{ password_form.old_password.errors }}
+                        <input type="password" name="{{ password_form.old_password.html_name }}" 
+                               class="form-control {% if password_form.old_password.errors %}is-invalid{% endif %}" 
+                               id="{{ password_form.old_password.id_for_label }}">
+                        {% if password_form.old_password.errors %}
+                            <div class="invalid-feedback">
+                                {{ password_form.old_password.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ password_form.new_password1.id_for_label }}" class="form-label fw-bold">New Password:</label>
+                        {{ password_form.new_password1.errors }}
+                        <input type="password" name="{{ password_form.new_password1.html_name }}" 
+                               class="form-control {% if password_form.new_password1.errors %}is-invalid{% endif %}" 
+                               id="{{ password_form.new_password1.id_for_label }}">
+                        {% if password_form.new_password1.errors %}
+                            <div class="invalid-feedback">
+                                {{ password_form.new_password1.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ password_form.new_password2.id_for_label }}" class="form-label fw-bold">Confirm New Password:</label>
+                        {{ password_form.new_password2.errors }}
+                        <input type="password" name="{{ password_form.new_password2.html_name }}" 
+                               class="form-control {% if password_form.new_password2.errors %}is-invalid{% endif %}" 
+                               id="{{ password_form.new_password2.id_for_label }}">
+                        {% if password_form.new_password2.errors %}
+                            <div class="invalid-feedback">
+                                {{ password_form.new_password2.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if password_form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ password_form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-warning">Change Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Actions</h3>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'profile' %}" class="btn btn-secondary">Back to Profile</a>
+                    <a href="{% url 'submit_complaint' %}" class="btn btn-success">Submit New Complaint</a>
+                    <a href="{% url 'view_complaints' %}" class="btn btn-info">View Your Complaints</a>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-danger">Logout</a>
+                    <a href="{% url 'delete_profile' %}" class="btn btn-outline-danger">Delete Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

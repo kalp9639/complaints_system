@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Submit Complaint - Civic Complaints System{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Submit a Complaint</h2>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="{{ form.complaint_type.id_for_label }}" class="form-label">{{ form.complaint_type.label }}</label>
+            {{ form.complaint_type }}
+          </div>
+          <div class="mb-3">
+            <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+            <div class="input-group">
+              {{ form.image }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+            {{ form.description }}
+          </div>
+          
+          <!-- Location section -->
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <div id="location-status" class="alert alert-info">
+              Detecting your location...
+            </div>
+            <!-- Hidden fields for location -->
+            <input type="hidden" id="id_latitude" name="latitude">
+            <input type="hidden" id="id_longitude" name="longitude">
+            <button type="button" id="refresh-location" class="btn btn-sm btn-secondary mb-3">Refresh Location</button>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">Submit Complaint</button>
+            <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function getLocation() {
+    const statusDiv = document.getElementById("location-status");
+    statusDiv.innerHTML = "Detecting your location...";
+    statusDiv.className = "alert alert-info";
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          document.getElementById("id_latitude").value = lat;
+          document.getElementById("id_longitude").value = lng;
+          
+          statusDiv.innerHTML = `Location detected (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+          statusDiv.className = "alert alert-success";
+        },
+        function(error) {
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              statusDiv.innerHTML = "Location access denied. Please enable location services.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              statusDiv.innerHTML = "Location information unavailable.";
+              break;
+            case error.TIMEOUT:
+              statusDiv.innerHTML = "Location request timed out.";
+              break;
+            default:
+              statusDiv.innerHTML = "An unknown error occurred while getting location.";
+          }
+          statusDiv.className = "alert alert-danger";
+        }
+      );
+    } else {
+      statusDiv.innerHTML = "Geolocation is not supported by this browser.";
+      statusDiv.className = "alert alert-danger";
+    }
+  }
+  
+  // Auto-fetch location when page loads
+  document.addEventListener("DOMContentLoaded", getLocation);
+  
+  // Set up refresh button
+  document.getElementById("refresh-location").addEventListener("click", getLocation);
+</script>
+{% endblock %}

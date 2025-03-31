@@ -1,0 +1,94 @@
+{# templates/notifications/all_notifications.html #}
+
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}All Notifications - Civic Complaints System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary me-3">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <h1 class="mb-0">All Notifications</h1>
+                </div>
+                {# Use context variable for unread count check #}
+                {% if unread_notification_count > 0 %}
+                  <form action="{% url 'mark_all_notifications_read' %}" method="post">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-secondary">Mark all as read</button>
+                  </form>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <div class="list-group list-group-flush">
+                    {# Rest of the template remains the same #}
+                    {% if page_obj %}
+                        {# Loop through notifications on the current page #}
+                        {% for notification in page_obj %}
+                            {% include "notifications/_notification_item.html" with notification=notification %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-center text-muted p-5">
+                            You have no notifications yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# --- START PAGINATION CONTROLS --- #}
+            {% if is_paginated and page_obj.paginator.num_pages > 1 %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {# Previous Page Link #}
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                <span aria-hidden="true">«</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">«</span>
+                        </li>
+                    {% endif %}
+
+                    {# Page Number Links #}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            {# Show links for pages near the current one #}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
+                            {# Show ellipsis for gaps #}
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {# Next Page Link #}
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                <span aria-hidden="true">»</span>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">»</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {# --- END PAGINATION CONTROLS --- #}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

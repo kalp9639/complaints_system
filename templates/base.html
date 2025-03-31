@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en" class="h-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Civic Complaints System{% endblock %}</title>
+    
+    {# Bootstrap CSS #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    {# Bootstrap Icons #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    {# Font Awesome (Optional - if used elsewhere) #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    {# Custom CSS Block #}
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            margin: 0;
+        }
+        
+        main.content-wrapper {
+            flex: 1 0 auto;
+            padding-top: 70px; /* Increased slightly for fixed navbar */
+            padding-bottom: 60px; /* Reduced slightly */
+        }
+        
+        .navbar {
+            /* Removed margin-bottom as it's fixed-top */
+            box-shadow: 0 2px 4px rgba(0,0,0,.1); /* Optional: Add shadow to fixed navbar */
+        }
+        
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            font-weight: bold;
+        }
+        
+        .site-footer {
+            flex-shrink: 0;
+            background-color: #212529; /* Same as Bootstrap's bg-dark */
+            color: white;
+            margin-top: auto; /* Push footer to bottom */
+        }
+
+        /* Ensure offcanvas body allows scrolling if content exceeds height */
+        .offcanvas-body {
+            overflow-y: auto;
+        }
+        /* Bell Icon Styling */
+        .navbar .bi-bell-fill {
+            font-size: 1.1rem; /* Similar to other navbar icons */
+            color: #ffffff;
+            vertical-align: middle;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .navbar .btn-secondary {
+            padding: 6px 8px;
+            background-color: transparent;
+            border: none;
+        }
+
+        .navbar .btn-secondary:hover .bi-bell-fill {
+            color: #ffc107;
+            transform: scale(1.1);
+        }
+
+        /* Badge Positioning - Clean */
+        .navbar .badge {
+            font-size: 0.6rem;
+            padding: 3px 5px;
+        }
+
+        .navbar .btn-secondary .badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.65rem;
+            padding: 3px 5px;
+            transform: none;
+        }
+
+    </style>
+</head>
+<body class="d-flex flex-column">
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="{% url 'home' %}">Civic Complaints</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto align-items-center"> {# Added align-items-center for vertical alignment #}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+                        </li>
+                        
+                        {% if user.is_authenticated %}
+                            {# Links based on user type #}
+                            {% if is_official %}
+                                <!-- Government Officials' Navbar -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and request.resolver_match.url_name == 'authority_dashboard' %}active{% endif %}" href="{% url 'authorities:authority_dashboard' %}">Dashboard</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_list' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_list' %}">Complaints List</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_map' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_map' %}">Complaints Map</a>
+                                </li>
+                            {% else %}
+                                <!-- Normal Users' Navbar -->
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">Profile</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'submit_complaint' %}active{% endif %}" href="{% url 'submit_complaint' %}">Submit Complaint</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'view_complaints' %}active{% endif %}" href="{% url 'view_complaints' %}">View Complaints</a>
+                                </li>
+                            {% endif %}
+                            
+                            {# --- Notification Trigger Button (Only for Non-Officials) --- #}
+                            {% if not is_official %} 
+                            <li class="nav-item ms-1"> 
+                                <button class="btn btn-secondary position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#notificationSlider" aria-controls="notificationSlider">
+                                    <i class="bi bi-bell-fill"></i>
+                                    {% if unread_notification_count > 0 %}
+                                    <span class="badge rounded-pill bg-danger">
+                                        {{ unread_notification_count }}
+                                    </span>
+                                    {% endif %}
+                                </button>
+                            </li>
+                            {% endif %} {# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< #}
+                            {# --- End Notification Trigger Button --- #}
+
+                            {# Inside the {% if user.is_authenticated %} block in base.html #}
+
+                            <li class="nav-item ms-1"> {# Added margin for spacing #}
+                                {# Add onclick attribute for confirmation #}
+                                <a class="nav-link" href="{% url 'logout' %}"
+                                onclick="return confirm('Are you sure you want to logout?');">
+                                Logout
+                                </a>
+                            </li>
+                        {% else %}
+                            <!-- Guests' Navbar -->
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.resolver_match.url_name == 'signup' %}active{% endif %}" href="{% url 'signup' %}">Sign Up</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    
+    <main class="content-wrapper container mt-4">
+        {# Display Django messages framework messages #}
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-dismissible fade show {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        {# Main content block for child templates #}
+        {% block content %}{% endblock %}
+    </main>
+    
+    <footer class="site-footer py-4 bg-dark text-white mt-auto"> {# Added text-white and mt-auto #}
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5>Civic Complaints</h5>
+                    <p class="small">Making our communities better together</p> {# Made text smaller #}
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled small"> {# Made text smaller #}
+                        <li><i class="fas fa-user me-2"></i> Kalp Patel</li>
+                        <li><i class="fas fa-phone me-2"></i> +91 8238804881</li>
+                        {# Consider adding email #}
+                        <li><i class="fas fa-envelope me-2"></i> <a href="mailto:kalp9639@gmail.com" class="text-white text-decoration-none">kalp9639@gmail.com</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Social Media</h5>
+                    <div class="d-flex gap-3">
+                        <a href="https://www.instagram.com/kkaallpp_/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="https://www.linkedin.com/in/kalp-patel-301234211/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
+                        {# Add Github or other relevant links? #}
+                        {# <a href="#" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github fa-lg"></i></a> #}
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3">
+            <div class="text-center small"> {# Made text smaller #}
+                <p class="mb-0">© {% now "Y" %} Civic Complaints System. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    {# --- Include Notification Slider Template (only for logged-in users) --- #}
+    {% if user.is_authenticated %}
+        {% include "notifications/_notification_slider.html" %}
+    {% endif %}
+    {# --- End Notification Slider Include --- #}
+    
+    {# Bootstrap JS Bundle (includes Popper) #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {# Custom JS Block #}
+    {% block extra_js %}{% endblock %}
+    
+    {# Removed redundant csrf_token #}
+</body>
+</html>

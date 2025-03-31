@@ -1,0 +1,106 @@
+{% load humanize %}
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="notificationSlider" aria-labelledby="notificationSliderLabel">
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title" id="notificationSliderLabel">
+      Notifications 
+      {# Removed the notification count badge here #}
+    </h5>
+    
+    {# "Mark all as read" button - only show if there are unread notifications #}
+    {% if unread_notification_count > 0 %}
+      <form id="markAllReadForm" action="{% url 'mark_all_notifications_read' %}" method="post" class="ms-auto me-2">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-link text-decoration-none p-0" title="Mark all as read">
+              <i class="bi bi-check2-all fs-5"></i>
+          </button>
+      </form>
+    {% endif %}
+    
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  
+  <div class="offcanvas-body p-0">
+    <div class="list-group list-group-flush notification-items-container">
+      {% if unread_notifications %}
+        {% for notification in unread_notifications %}
+          {% include "notifications/_notification_item.html" with notification=notification %}
+        {% endfor %}
+        
+        <div class="list-group-item text-center py-2">
+          <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
+            View all notifications
+          </a>
+        </div>
+      {% else %}
+        <div class="list-group-item text-center text-muted p-5 no-notifications-message">
+          <i class="bi bi-bell-slash fs-1 text-muted"></i>
+          <p class="mt-2 mb-1">No new notifications</p>
+          <small class="text-muted">You're all caught up!</small>
+          <div class="mt-3">
+            <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
+              View all past notifications
+            </a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const markAllReadForm = document.getElementById('markAllReadForm');
+    
+    if (markAllReadForm) {
+      markAllReadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send AJAX request
+        fetch('{% url "mark_all_notifications_read" %}', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Update the navbar notification badge
+            const navbarBadge = document.querySelector('.navbar .badge');
+            if (navbarBadge) {
+              navbarBadge.style.display = 'none';
+            }
+            
+            // Hide the mark all read button
+            markAllReadForm.style.display = 'none';
+            
+            // Replace notification items with the "no notifications" message
+            const notificationItemsContainer = document.querySelector('.notification-items-container');
+            notificationItemsContainer.innerHTML = `
+              <div class="list-group-item text-center text-muted p-5 no-notifications-message">
+                <i class="bi bi-bell-slash fs-1 text-muted"></i>
+                <p class="mt-2 mb-1">No new notifications</p>
+                <small class="text-muted">You're all caught up!</small>
+                <div class="mt-3">
+                  <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
+                    View all past notifications
+                  </a>
+                </div>
+              </div>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('Error marking notifications as read:', error);
+        });
+      });
+    }
+  });
+</script>
