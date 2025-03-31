@@ -33,21 +33,32 @@
                         </div>
                     </div>
                     
-                    <div class="d-grid gap-2">
+                    <div class="d-grid gap-2 mb-4">
                         <button type="submit" class="btn btn-primary">Login</button>
                     </div>
                 </form>
-            </div>
 
-            <div class="text-center my-3 border-top pt-3">
-                <p class="mb-0">Login with your mobile number instead? <a href="{% url 'mobile_login' %}">Click here</a></p>
-            </div>
+                <!-- Login options section with divider -->
+                <div class="position-relative my-4">
+                    <hr>
+                    <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
+                        <span class="text-muted">Or login with</span>
+                    </div>
+                </div>
 
-            <div class="text-center my-3 border-top pt-3">
-                <p class="mb-2">Or login with:</p>
-                <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger">
-                    <i class="fab fa-google me-2"></i>Login with Google
-                </a>
+                <!-- Alternative login options in a grid -->
+                <div class="row g-2 mb-3">
+                    <div class="col-md-6">
+                        <a href="{% url 'mobile_login' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-mobile-alt me-2"></i>Mobile Number
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger w-100">
+                            <i class="fab fa-google me-2"></i>Google
+                        </a>
+                    </div>
+                </div>
             </div>
 
             <div class="card-footer text-center">
