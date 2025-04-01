@@ -17,7 +17,7 @@ from .forms import SignUpForm, UserUpdateForm, PasswordChangeForm, UsernameOrEma
 from .models import UserProfile
 from .utils import send_verification_code, check_verification_code
 from django.http import JsonResponse
-
+from allauth.socialaccount.models import SocialAccount
 from django.conf import settings 
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -26,7 +26,6 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.html import strip_tags
 from django.core.mail import EmailMultiAlternatives
-
 from twilio.base.exceptions import TwilioRestException
 import logging 
 
@@ -114,18 +113,22 @@ class SignUpView(FormView):
         messages.error(self.request, 'Please correct the errors below.')
         return super().form_invalid(form)
 
-# Modify ProfileView to just show profile info
 @method_decorator(login_required, name='dispatch')
 class ProfileView(View):
     def get(self, request, *args, **kwargs):
+        # Get all social accounts for current user
+        social_accounts = SocialAccount.objects.filter(user=request.user)
+        
         if hasattr(request.user, 'official_profile'):
             # Redirect government officials to their dashboard
             return redirect('authorities:authority_dashboard')
         else:
-            # Normal users see their profile with complaint options
-            return render(request, 'accounts/profile.html', {'user': request.user})
+            # Normal users see their profile with complaint options and social accounts
+            return render(request, 'accounts/profile.html', {
+                'user': request.user,
+                'social_accounts': social_accounts
+            })
 
-# Add a new view for profile editing
 @method_decorator(login_required, name='dispatch')
 class ProfileEditView(View):
     def get(self, request, *args, **kwargs):

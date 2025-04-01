@@ -250,6 +250,12 @@ ACCOUNT_EMAIL_VERIFICATION = 'optional'
 SOCIALACCOUNT_LOGIN_ON_GET = True
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
+# Allauth Custom Adapter
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
+
+# Allow users to disconnect social accounts
+SOCIALACCOUNT_AUTO_SIGNUP = False  # Change this from True to False
+
 # Logging for debugging
 LOGGING['loggers']['allauth'] = {
     'handlers': ['file', 'console'],
