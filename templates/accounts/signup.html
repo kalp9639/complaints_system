@@ -31,8 +31,13 @@
                         <button type="submit" class="btn btn-primary">Sign Up</button>
                     </div>
 
-                    <div class="text-center my-3 border-top pt-3">
-                        <p class="mb-2">or</p>
+                    <div class="position-relative my-4">
+                        <hr>
+                        <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
+                            <span class="text-muted">or</span>
+                        </div>
+                    </div>
+                    <div class="text-center">
                         <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger">
                             <i class="fab fa-google me-2"></i>Sign Up with Google
                         </a>
