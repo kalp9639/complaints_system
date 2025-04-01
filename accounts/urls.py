@@ -17,4 +17,7 @@ urlpatterns = [
     path('verify-phone/', views.OTPVerificationView.as_view(), name='verify_phone'),
     path('mobile-login/', views.MobileLoginView.as_view(), name='mobile_login'),
     path('verify-login-otp/', views.VerifyOTPLoginView.as_view(), name='verify_login_otp'),
+    path('check-username/', views.check_username, name='check_username'),
+    path('check-email/', views.check_email, name='check_email'),
+    path('check-mobile/', views.check_mobile, name='check_mobile'),
 ]

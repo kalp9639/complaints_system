@@ -16,6 +16,7 @@ from django.contrib.auth import update_session_auth_hash
 from .forms import SignUpForm, UserUpdateForm, PasswordChangeForm, UsernameOrEmailPasswordResetForm, CustomSetPasswordForm, OTPVerificationForm, MobileLoginForm 
 from .models import UserProfile
 from .utils import send_verification_code, check_verification_code
+from django.http import JsonResponse
 
 from django.conf import settings 
 from django.contrib.auth.tokens import default_token_generator
@@ -25,6 +26,11 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.html import strip_tags
 from django.core.mail import EmailMultiAlternatives
+
+from twilio.base.exceptions import TwilioRestException
+import logging 
+
+logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = 'accounts/home.html'
@@ -41,7 +47,7 @@ class HomeView(TemplateView):
 class SignUpView(FormView):
     template_name = 'accounts/signup.html'
     form_class = SignUpForm
-    success_url = '/'  # Redirect to home page on success
+    # success_url = '/'  # Redirect to home page on success
     
     def dispatch(self, request, *args, **kwargs):
         # If user is already authenticated, log them out first
@@ -71,15 +77,37 @@ class SignUpView(FormView):
             'mobile_number': formatted_number,
         }
         
-        # Send verification code via Twilio
-        status = send_verification_code(formatted_number)
-        
-        if status == 'pending':
-            messages.success(self.request, 'Verification code sent to your mobile number.')
-            # Redirect to verification page
-            return redirect('verify_phone')
-        else:
-            messages.error(self.request, f'Failed to send verification code. Please try again. Status: {status}')
+        # --- Wrap Twilio call in try...except ---
+        try:
+            status = send_verification_code(formatted_number)
+
+            if status == 'pending':
+                messages.success(self.request, 'Verification code sent to your mobile number.')
+                return redirect('verify_phone') # Redirect to verification page
+            else:
+                # Handle cases where Twilio doesn't raise an exception but fails
+                messages.error(self.request, f'Failed to send verification code. Status: {status}. Please try again.')
+                return self.form_invalid(form) # Re-render signup form
+
+        except TwilioRestException as e:
+            logger.error(f"Twilio error sending verification to {formatted_number}: {e}", exc_info=True)
+
+            # Create a user-friendly error message
+            error_message = "Failed to send verification code. Please check the number and try again."
+            # Specifically check for the unverified number error (code 21608)
+            if e.code == 21608:
+                error_message = ("Failed to send verification code. The phone number must be "
+                                "verified in your Twilio trial account first.")
+            elif e.code == 60200: # Example: Invalid parameter error
+                error_message = "Failed to send verification code. The phone number format seems invalid."
+
+            messages.error(self.request, error_message)
+            return self.form_invalid(form) # Re-render signup form with the error message
+
+        except Exception as e:
+            # Catch any other unexpected errors during OTP sending
+            logger.error(f"Unexpected error sending verification to {formatted_number}: {e}", exc_info=True)
+            messages.error(self.request, 'An unexpected error occurred while trying to send the verification code. Please try again later.')
             return self.form_invalid(form)
 
     def form_invalid(self, form):
@@ -414,3 +442,27 @@ class VerifyOTPLoginView(View):
                 messages.error(request, 'Invalid verification code. Please try again.')
         
         return render(request, self.template_name, {'form': form})
+
+def check_username(request):
+    """Check if username is available."""
+    username = request.GET.get('username', '')
+    is_taken = User.objects.filter(username=username).exists()
+    return JsonResponse({'is_taken': is_taken})
+
+def check_email(request):
+    """Check if email is registered."""
+    email = request.GET.get('email', '')
+    is_registered = User.objects.filter(email=email).exists()
+    return JsonResponse({'is_registered': is_registered})
+
+def check_mobile(request):
+    """Check if mobile number is registered."""
+    mobile = request.GET.get('mobile', '')
+    
+    # Format the mobile number for consistency
+    if not mobile.startswith('+'):
+        from django.conf import settings
+        mobile = f"+{settings.DEFAULT_COUNTRY_CODE}{mobile}"
+    
+    is_registered = UserProfile.objects.filter(mobile_number=mobile).exists()
+    return JsonResponse({'is_registered': is_registered})

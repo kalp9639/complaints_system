@@ -1,6 +1,7 @@
 <!-- templates/signup.html -->
 {% extends 'base.html' %}
 {% load socialaccount %} 
+{% load static %}
 {% block title %}Sign Up - Civic Complaints System{% endblock %}
 
 {% block content %}
@@ -11,7 +12,7 @@
                 <h2 class="mb-0">Citizen Sign Up</h2>
             </div>
             <div class="card-body">
-                <form method="post" novalidate>
+                <form method="post" novalidate id="signup-form">
                     {% csrf_token %}
                     
                     {% for field in form %}
@@ -65,4 +66,5 @@
         });
     });
 </script>
+<script src="{% static 'js/form-validation.js' %}"></script>
 {% endblock %}

@@ -7,6 +7,15 @@ from pathlib import Path
 import os
 from django.conf import settings
 from dotenv import load_dotenv
+from django.contrib.messages import constants as messages
+
+MESSAGE_TAGS = {
+    messages.DEBUG: 'info',
+    messages.INFO: 'info',
+    messages.SUCCESS: 'success',
+    messages.WARNING: 'warning',
+    messages.ERROR: 'danger',  # Change 'error' to 'danger' for Bootstrap compatibility
+}
 
 # Load environment variables from .env file
 load_dotenv()
