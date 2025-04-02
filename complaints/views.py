@@ -398,3 +398,27 @@ class EmptyTrashView(View):
             messages.info(request, "Trash bin was already empty.")
 
         return HttpResponseRedirect(reverse('trash_bin'))
+
+# Add this import at the top if not already there
+from django.http import JsonResponse
+
+# Add this new view function
+@login_required
+def get_ward_from_coordinates(request):
+    """API endpoint to get ward information from coordinates"""
+    try:
+        lat = float(request.GET.get('lat', 0))
+        lng = float(request.GET.get('lng', 0))
+        
+        ward = find_ward(lat, lng)
+        
+        return JsonResponse({
+            'success': True,
+            'ward': ward
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'ward': 'Unknown',
+            'error': str(e)
+        })

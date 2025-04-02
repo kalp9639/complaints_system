@@ -69,6 +69,10 @@
               </button>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
+                  <a href="{% url 'edit_complaint' complaint.id %}" class="dropdown-item">
+                    <i class="bi bi-pencil me-2"></i> Edit
+                  </a>
+                </li>
                   <button class="dropdown-item" onclick="copyComplaintLink('{% url 'complaint_detail' complaint.pk %}')">
                     <i class="bi bi-share me-2"></i> Share
                   </button>

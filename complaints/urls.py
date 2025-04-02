@@ -14,5 +14,6 @@ urlpatterns = [
     path('complaints/restore/<int:pk>/', views.ComplaintRestoreView.as_view(), name='restore_complaint'),
     path('complaints/trash-bin/', views.TrashBinView.as_view(), name='trash_bin'),
     path('complaints/empty-trash/', views.EmptyTrashView.as_view(), name='empty_trash'),
+    path('get-ward/', views.get_ward_from_coordinates, name='get_ward_from_coordinates'),
 ]
 
