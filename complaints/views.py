@@ -18,8 +18,9 @@ import zipfile
 import tempfile
 import fiona
 import json
-from django.conf import settings  # Import settings
-from django.core.cache import cache # import cache
+from django.conf import settings 
+from django.core.cache import cache 
+from django.http import JsonResponse
 
 # Global variable to store the GeoDataFrame
 WARD_boundaries_gdf = None
@@ -86,6 +87,25 @@ def find_ward(lat, lon):
             return row["Name"]
     return "Unknown"
 
+@login_required
+def get_ward_from_coordinates(request):
+    """API endpoint to get ward information from coordinates"""
+    try:
+        lat = float(request.GET.get('lat', 0))
+        lng = float(request.GET.get('lng', 0))
+        
+        ward = find_ward(lat, lng)
+        
+        return JsonResponse({
+            'success': True,
+            'ward': ward
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'ward': 'Unknown',
+            'error': str(e)
+        })
 
 @method_decorator(login_required, name='dispatch')
 class ComplaintCreateView(CreateView):
@@ -398,27 +418,3 @@ class EmptyTrashView(View):
             messages.info(request, "Trash bin was already empty.")
 
         return HttpResponseRedirect(reverse('trash_bin'))
-
-# Add this import at the top if not already there
-from django.http import JsonResponse
-
-# Add this new view function
-@login_required
-def get_ward_from_coordinates(request):
-    """API endpoint to get ward information from coordinates"""
-    try:
-        lat = float(request.GET.get('lat', 0))
-        lng = float(request.GET.get('lng', 0))
-        
-        ward = find_ward(lat, lng)
-        
-        return JsonResponse({
-            'success': True,
-            'ward': ward
-        })
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'ward': 'Unknown',
-            'error': str(e)
-        })
