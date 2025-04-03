@@ -179,19 +179,20 @@
             // Create popup content
             const popupContent = `
                 <div class="complaint-info">
+                    ${complaint.image_url ? `
+                    <div class="mb-2">
+                        <img src="${complaint.image_url}" alt="${complaint.type} complaint" class="img-fluid rounded" style="max-height: 120px; width: auto;">
+                    </div>
+                    ` : ''}
                     <h5>${complaint.type} Complaint</h5>
                     <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
                     <p><strong>Ward:</strong> ${complaint.ward}</p>
                     <p><strong>Submitted by:</strong> ${complaint.submitted_by}</p>
                     <p><strong>Date:</strong> ${complaint.date}</p>
-                    <a href="/complaints/detail/${complaint.id}/" class="btn btn-sm btn-outline-primary">View Details</a>
+                    <a href="${complaint.url}" class="btn btn-sm btn-outline-primary">View Details</a>
                     <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" 
-                    target="_blank" class="btn btn-sm btn-outline-primary ml-2">
-                    Open in Maps
-                    </a>
-                    <a href="/authorities/complaint/${complaint.id}/update/" 
-                    class="btn btn-sm btn-primary mt-2" style="color: white;">
-                    Update Status
+                    target="_blank" class="btn btn-sm btn-outline-primary">
+                    View on Google Maps
                     </a>
                 </div>
             `;

@@ -198,7 +198,8 @@ class AuthorityComplaintsMapView(View):
                 'url': f'/complaints/detail/{complaint.id}/',
                 'ward': complaint.ward_number or 'Unknown',
                 'submitted_by': complaint.user.get_full_name() or complaint.user.username,
-                'date': complaint.created_at.strftime('%Y-%m-%d %H:%M')
+                'date': complaint.created_at.strftime('%Y-%m-%d %H:%M'),
+                'image_url': complaint.image.url if complaint.image else None,
             })
         
         context = {

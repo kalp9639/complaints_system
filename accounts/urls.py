@@ -20,4 +20,6 @@ urlpatterns = [
     path('check-username/', views.check_username, name='check_username'),
     path('check-email/', views.check_email, name='check_email'),
     path('check-mobile/', views.check_mobile, name='check_mobile'),
+    path('social-mobile-verification/', views.SocialMobileVerificationView.as_view(), name='social_mobile_verification'),
+    path('verify-social-otp/', views.VerifySocialOTPView.as_view(), name='verify_social_otp'),
 ]

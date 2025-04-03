@@ -12,7 +12,7 @@ class SignUpForm(UserCreationForm):
     email = forms.EmailField(max_length=254, required=True, help_text='Required. Enter a valid email address.')
     first_name = forms.CharField(max_length=30, required=True, help_text='Required.')
     last_name = forms.CharField(max_length=30, required=True, help_text='Required.')
-    mobile_number = forms.CharField(max_length=15, required=True, help_text='Required. Enter a valid mobile number.')
+    mobile_number = forms.CharField(max_length=10, required=True, help_text='Required. Enter a valid mobile number.')
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -136,3 +136,13 @@ class OTPVerificationForm(forms.Form):
 
 class MobileLoginForm(forms.Form):
     mobile_number = forms.CharField(max_length=15, required=True, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter your mobile number'}))
+
+class SocialMobileVerificationForm(forms.Form):
+    mobile_number = forms.CharField(
+        max_length=10, 
+        required=True, 
+        widget=forms.TextInput(attrs={
+            'class': 'form-control', 
+            'placeholder': 'Enter your mobile number'
+        })
+    )

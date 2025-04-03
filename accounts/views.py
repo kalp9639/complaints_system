@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from .forms import SignUpForm, UserUpdateForm
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth import update_session_auth_hash
-from .forms import SignUpForm, UserUpdateForm, PasswordChangeForm, UsernameOrEmailPasswordResetForm, CustomSetPasswordForm, OTPVerificationForm, MobileLoginForm 
+from .forms import SignUpForm, UserUpdateForm, PasswordChangeForm, UsernameOrEmailPasswordResetForm, CustomSetPasswordForm, OTPVerificationForm, MobileLoginForm, SocialMobileVerificationForm, OTPVerificationForm 
 from .models import UserProfile
 from .utils import send_verification_code, check_verification_code
 from django.http import JsonResponse
@@ -27,6 +27,8 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.html import strip_tags
 from django.core.mail import EmailMultiAlternatives
 from twilio.base.exceptions import TwilioRestException
+from allauth.socialaccount.models import SocialAccount, SocialLogin
+from django.contrib.auth import authenticate
 import logging 
 
 logger = logging.getLogger(__name__)
@@ -469,3 +471,210 @@ def check_mobile(request):
     
     is_registered = UserProfile.objects.filter(mobile_number=mobile).exists()
     return JsonResponse({'is_registered': is_registered})
+
+logger = logging.getLogger(__name__)
+
+class SocialMobileVerificationView(View):
+    template_name = 'accounts/social_mobile_verification.html'
+    form_class = SocialMobileVerificationForm
+    
+    def get(self, request, *args, **kwargs):
+        # Check if there's pending social login data
+        if 'pending_sociallogin' not in request.session:
+            messages.error(request, 'No pending social login found.')
+            return redirect('login')
+        
+        form = self.form_class()
+        
+        # Get information about the pending social login
+        pending_data = request.session['pending_sociallogin']
+        is_new = pending_data.get('is_new', False)
+        
+        context = {
+            'form': form,
+            'is_new': is_new,
+        }
+        
+        if is_new:
+            # For new user, show email and name
+            user_data = pending_data.get('user_data', {})
+            context['email'] = user_data.get('email', '')
+            context['name'] = f"{user_data.get('first_name', '')} {user_data.get('last_name', '')}".strip()
+        else:
+            # For existing user, get user details
+            user_id = pending_data.get('user_id')
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    context['email'] = user.email
+                    context['name'] = f"{user.first_name} {user.last_name}".strip() 
+                except User.DoesNotExist:
+                    pass
+        
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        # Check if there's pending social login data
+        if 'pending_sociallogin' not in request.session:
+            messages.error(request, 'No pending social login found.')
+            return redirect('login')
+        
+        form = self.form_class(request.POST)
+        
+        if form.is_valid():
+            mobile_number = form.cleaned_data.get('mobile_number')
+            formatted_number = f"+{settings.DEFAULT_COUNTRY_CODE}{mobile_number}" if not mobile_number.startswith('+') else mobile_number
+            
+            # Update session with mobile number
+            request.session['pending_sociallogin']['mobile_number'] = formatted_number
+            
+            # Send verification code
+            try:
+                status = send_verification_code(formatted_number)
+                
+                if status == 'pending':
+                    messages.success(request, 'Verification code sent to your mobile number.')
+                    return redirect('verify_social_otp')
+                else:
+                    messages.error(request, f'Failed to send verification code. Status: {status}. Please try again.')
+            except TwilioRestException as e:
+                logger.error(f"Twilio error sending verification to {formatted_number}: {e}", exc_info=True)
+                
+                # Create a user-friendly error message
+                error_message = "Failed to send verification code. Please check the number and try again."
+                # Specifically check for the unverified number error (code 21608)
+                if e.code == 21608:
+                    error_message = ("Failed to send verification code. The phone number must be "
+                                    "verified in your Twilio trial account first.")
+                elif e.code == 60200:  # Example: Invalid parameter error
+                    error_message = "Failed to send verification code. The phone number format seems invalid."
+                
+                messages.error(request, error_message)
+            except Exception as e:
+                logger.error(f"Unexpected error sending verification to {formatted_number}: {e}", exc_info=True)
+                messages.error(request, 'An unexpected error occurred while trying to send the verification code. Please try again later.')
+        
+        # Get information about the pending social login
+        pending_data = request.session['pending_sociallogin']
+        is_new = pending_data.get('is_new', False)
+        
+        context = {
+            'form': form,
+            'is_new': is_new,
+        }
+        
+        if is_new:
+            # For new user, show email and name
+            user_data = pending_data.get('user_data', {})
+            context['email'] = user_data.get('email', '')
+            context['name'] = f"{user_data.get('first_name', '')} {user_data.get('last_name', '')}".strip()
+        else:
+            # For existing user, get user details
+            user_id = pending_data.get('user_id')
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    context['email'] = user.email
+                    context['name'] = f"{user.first_name} {user.last_name}".strip() 
+                except User.DoesNotExist:
+                    pass
+                    
+        return render(request, self.template_name, context)
+
+
+class VerifySocialOTPView(View):
+    template_name = 'accounts/verify_social_otp.html'
+    form_class = OTPVerificationForm
+    
+    def get(self, request, *args, **kwargs):
+        # Check if there's pending social login data
+        if 'pending_sociallogin' not in request.session or 'mobile_number' not in request.session['pending_sociallogin']:
+            messages.error(request, 'No pending verification found.')
+            return redirect('login')
+        
+        form = self.form_class()
+        return render(request, self.template_name, {'form': form})
+    
+    def post(self, request, *args, **kwargs):
+        # Check if there's pending social login data
+        if 'pending_sociallogin' not in request.session or 'mobile_number' not in request.session['pending_sociallogin']:
+            messages.error(request, 'No pending verification found.')
+            return redirect('login')
+        
+        form = self.form_class(request.POST)
+        
+        if form.is_valid():
+            code = form.cleaned_data.get('code')
+            pending_data = request.session['pending_sociallogin']
+            mobile_number = pending_data.get('mobile_number')
+            
+            # Verify code
+            status = check_verification_code(mobile_number, code)
+            
+            if status == 'approved':
+                is_new = pending_data.get('is_new', False)
+                
+                if is_new:
+                    # Create new user from social account data
+                    user_data = pending_data.get('user_data', {})
+                    
+                    try:
+                        # Create the user
+                        user = User.objects.create_user(
+                            username=user_data.get('username'),
+                            email=user_data.get('email'),
+                            first_name=user_data.get('first_name', ''),
+                            last_name=user_data.get('last_name', ''),
+                        )
+                        
+                        # Create profile with verified mobile number
+                        profile, created = UserProfile.objects.get_or_create(user=user)
+                        profile.mobile_number = mobile_number
+                        profile.mobile_verified = True
+                        profile.save()
+                        
+                        # Now that user is verified, need to create the social account connection
+                        provider = user_data.get('provider')
+                        
+                        # Log the user in
+                        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                        
+                        # Redirect to create social account connection
+                        messages.success(request, 'Your account has been created successfully! Please connect your social account again.')
+                        return redirect('home')  # Redirect to home or to social account connection
+                    
+                    except Exception as e:
+                        logger.error(f"Error creating user from social login: {e}", exc_info=True)
+                        messages.error(request, 'Error creating your account. Please try again.')
+                        return redirect('login')
+                else:
+                    # Existing user
+                    user_id = pending_data.get('user_id')
+                    
+                    try:
+                        user = User.objects.get(id=user_id)
+                        
+                        # Update profile with verified mobile number
+                        profile, created = UserProfile.objects.get_or_create(user=user)
+                        profile.mobile_number = mobile_number
+                        profile.mobile_verified = True
+                        profile.save()
+                        
+                        # Log the user in
+                        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                        
+                        messages.success(request, 'Mobile verification successful. Welcome back!')
+                        return redirect('home')
+                    
+                    except User.DoesNotExist:
+                        logger.error(f"User with id {user_id} not found during social verification")
+                        messages.error(request, 'User account not found. Please try again.')
+                        return redirect('login')
+                
+                # Clean up session
+                if 'pending_sociallogin' in request.session:
+                    del request.session['pending_sociallogin']
+            else:
+                messages.error(request, 'Invalid verification code. Please try again.')
+        
+        return render(request, self.template_name, {'form': form})

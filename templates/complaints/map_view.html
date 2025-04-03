@@ -143,22 +143,31 @@
             const marker = L.marker([complaint.lat, complaint.lng], {
                 icon: icons[complaint.status] || icons['Pending']
             });
-            
+        
             // Create popup content
             const popupContent = `
-                <div class="complaint-info">
+                <div class="complaint-info p-2 rounded">
+                    ${complaint.image_url ? `
+                    <div class="image-container mb-3 text-center">
+                        <img src="${complaint.image_url}" 
+                            alt="${complaint.type} complaint" 
+                            class="img-fluid rounded shadow-sm" 
+                            style="max-height: 180px; object-fit: cover; width: 100%;">
+                    </div>
+                    ` : ''}
+                    
                     <h5>${complaint.type} Complaint</h5>
                     <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
                     <p><strong>Ward:</strong> ${complaint.ward}</p>
-                    <p><strong>Submitted by:</strong> ${complaint.submitted_by}</p>
                     <p><strong>Date:</strong> ${complaint.date}</p>
+                    
                     <a href="${complaint.url}" class="btn btn-sm btn-outline-primary">View Details</a>
-                    <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" 
-                       target="_blank" class="btn btn-sm btn-outline-primary"">
-                       View on Google Maps
+                    <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}"
+                    target="_blank" class="btn btn-sm btn-outline-primary">
+                    View on Google Maps
                     </a>
                 </div>
-            `;
+                `;
             
             // Add popup to marker
             marker.bindPopup(popupContent);
