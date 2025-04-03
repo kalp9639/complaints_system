@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const mobileRegex = /^\+?[0-9]{10,15}$/;
         
         if (!mobileRegex.test(mobile)) {
-            showValidationFeedback(mobileField, 'Please enter a valid mobile number (10-15 digits)', false);
+            showValidationFeedback(mobileField, 'Please enter a valid mobile number (10 digits)', false);
             return;
         }
         
