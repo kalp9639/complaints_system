@@ -27,12 +27,18 @@ from .models import GovernmentOfficial, ComplaintUpdate
 # Standard Library
 import json
 
-
 @method_decorator(csrf_protect, name='dispatch')
 class OfficialSignUpView(FormView):
     template_name = 'authorities/official_signup.html'
     form_class = OfficialSignUpForm
-    success_url = '/authorities/dashboard/'  # Adjust as needed
+    success_url = '/authorities/dashboard/'
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the QR code has been verified
+        if not request.session.get('authority_qr_verified', False):
+            messages.error(request, 'Unauthorized Access: Please scan the authorized QR code first.')
+            return redirect('authorities:qr_verification')
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         try:
@@ -41,12 +47,16 @@ class OfficialSignUpView(FormView):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(self.request, user)
+            
+            # Clear the verification flag from the session after successful signup
+            if 'authority_qr_verified' in self.request.session:
+                del self.request.session['authority_qr_verified']
+                
             messages.success(self.request, f'Official account created for {username}!')
             return super().form_valid(form)
         except Exception as e:
             messages.error(self.request, f'Error creating account: {str(e)}')
             return self.form_invalid(form)
-
 
 class OfficialLoginView(View):
     template_name = 'authorities/official_login.html'
@@ -419,3 +429,54 @@ class OfficialDeleteProfileView(View):
         except Exception as e:
             messages.error(request, f'Error deleting profile: {str(e)}')
             return redirect('authorities:authority_dashboard')
+
+from django.conf import settings
+from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.views import View
+from django.contrib import messages
+from pyzbar.pyzbar import decode
+from PIL import Image
+import os
+
+class AuthorityQRVerificationView(View):
+    template_name = 'authorities/qr_verification.html'
+    
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name)
+    
+    def post(self, request, *args, **kwargs):
+        if 'qr_image' not in request.FILES:
+            return JsonResponse({'success': False, 'message': 'No image file provided'})
+        
+        try:
+            # Get the uploaded image
+            image_file = request.FILES['qr_image']
+            
+            # Open the image with PIL
+            image = Image.open(image_file)
+            
+            # Decode the QR code
+            decoded_objects = decode(image)
+            
+            if not decoded_objects:
+                return JsonResponse({'success': False, 'message': 'No QR code found in the image'})
+            
+            # Get the QR code data
+            qr_data = decoded_objects[0].data.decode('utf-8')
+            
+            # Print for debugging
+            print(f"QR Code Content: {qr_data}")
+            print(f"Expected Secret: {settings.AUTHORITY_QR_SECRET_KEY}")
+            
+            # Compare with the secret key
+            if qr_data == settings.AUTHORITY_QR_SECRET_KEY:
+                # Set session flag
+                request.session['authority_qr_verified'] = True
+                return JsonResponse({'success': True, 'redirect': '/authorities/signup/'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Invalid QR code. Unauthorized access.'})
+                
+        except Exception as e:
+            print(f"Error processing QR code: {str(e)}")
+            return JsonResponse({'success': False, 'message': f'Error processing QR code: {str(e)}'})

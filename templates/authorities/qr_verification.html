@@ -1,0 +1,264 @@
+<!-- templates/authorities/qr_verification.html -->
+
+{% extends 'base.html' %}
+{% block title %}Authority QR Verification{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Authority Verification</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-center">Please capture or upload the authority QR code to proceed with signup.</p>
+                    
+                    <!-- Tab navigation -->
+                    <ul class="nav nav-tabs mb-3" id="verificationTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="capture-tab" data-bs-toggle="tab" data-bs-target="#capture-content" 
+                                   type="button" role="tab" aria-controls="capture-content" aria-selected="true">Capture QR Code</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload-content" 
+                                   type="button" role="tab" aria-controls="upload-content" aria-selected="false">Upload QR Code</button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab content -->
+                    <div class="tab-content" id="verificationTabsContent">
+                        <!-- Capture QR Code tab -->
+                        <div class="tab-pane fade show active" id="capture-content" role="tabpanel" aria-labelledby="capture-tab">
+                            <div id="camera-controls" class="text-center mb-3">
+                                <button id="startCameraBtn" class="btn btn-primary">Start Camera</button>
+                                <button id="stopCameraBtn" class="btn btn-danger" style="display: none;">Stop Camera</button>
+                            </div>
+                            <div id="camera-container" class="mb-3 text-center">
+                                <video id="camera-preview" style="width: 100%; max-height: 300px; display: none;" autoplay playsinline></video>
+                                <button id="captureBtn" class="btn btn-success mt-2" style="display: none;">Capture QR Code</button>
+                            </div>
+                            <div id="snapshot-container" class="mb-3 text-center" style="display: none;">
+                                <canvas id="snapshot-canvas" style="width: 100%; max-height: 300px; border: 1px solid #ddd;"></canvas>
+                                <div class="mt-2">
+                                    <button id="retakeBtn" class="btn btn-secondary">Retake</button>
+                                    <button id="processBtn" class="btn btn-primary ms-2">Process QR Code</button>
+                                </div>
+                            </div>
+                            <div class="form-text text-center">Position the QR code within the camera view and take a clear snapshot.</div>
+                        </div>
+                        
+                        <!-- Upload QR Code tab -->
+                        <div class="tab-pane fade" id="upload-content" role="tabpanel" aria-labelledby="upload-tab">
+                            <form id="qrUploadForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="qrFileInput" class="form-label">Select QR Code Image</label>
+                                    <input type="file" class="form-control" id="qrFileInput" name="qr_image" accept="image/*" required>
+                                    <div class="form-text">Upload the QR code image you received from the administration.</div>
+                                </div>
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-primary">Verify QR Code</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div id="statusMessage" class="alert mt-3" style="display: none;"></div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{% url 'home' %}" class="btn btn-link">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form elements
+        const qrUploadForm = document.getElementById('qrUploadForm');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Camera elements
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const processBtn = document.getElementById('processBtn');
+        const cameraPreview = document.getElementById('camera-preview');
+        const snapshotCanvas = document.getElementById('snapshot-canvas');
+        const cameraContainer = document.getElementById('camera-container');
+        const snapshotContainer = document.getElementById('snapshot-container');
+        
+        let videoStream = null;
+        const ctx = snapshotCanvas.getContext('2d');
+        
+        // Display status message
+        function showMessage(message, isError) {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            statusMessage.className = isError ? 'alert alert-danger' : 'alert alert-success';
+        }
+        
+        // Handle QR code upload form submission
+        qrUploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loading message
+            showMessage('Processing QR code...', false);
+            
+            const formData = new FormData(qrUploadForm);
+            
+            fetch('{% url "authorities:qr_verification" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('QR Code verified successfully! Redirecting...', false);
+                    setTimeout(() => {
+                        window.location.href = data.redirect;
+                    }, 1500);
+                } else {
+                    showMessage(data.message, true);
+                }
+            })
+            .catch(error => {
+                showMessage('Error: ' + error, true);
+            });
+        });
+        
+        // Start camera
+        startCameraBtn.addEventListener('click', function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                })
+                .then(function(stream) {
+                    videoStream = stream;
+                    cameraPreview.srcObject = stream;
+                    cameraPreview.style.display = 'block';
+                    startCameraBtn.style.display = 'none';
+                    stopCameraBtn.style.display = 'inline-block';
+                    captureBtn.style.display = 'inline-block';
+                    snapshotContainer.style.display = 'none';
+                })
+                .catch(function(error) {
+                    showMessage('Error accessing camera: ' + error, true);
+                });
+            } else {
+                showMessage('Sorry, your browser does not support camera access', true);
+            }
+        });
+        
+        // Stop camera
+        stopCameraBtn.addEventListener('click', function() {
+            stopCamera();
+        });
+        
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                cameraPreview.style.display = 'none';
+                captureBtn.style.display = 'none';
+                stopCameraBtn.style.display = 'none';
+                startCameraBtn.style.display = 'inline-block';
+                videoStream = null;
+            }
+        }
+        
+        // Capture frame
+        captureBtn.addEventListener('click', function() {
+            if (cameraPreview.readyState === cameraPreview.HAVE_ENOUGH_DATA) {
+                // Set canvas dimensions to match the video
+                snapshotCanvas.width = cameraPreview.videoWidth;
+                snapshotCanvas.height = cameraPreview.videoHeight;
+                
+                // Draw the current video frame on the canvas
+                ctx.drawImage(cameraPreview, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
+                
+                // Show the snapshot and controls
+                snapshotContainer.style.display = 'block';
+                cameraContainer.style.display = 'none';
+            } else {
+                showMessage('Cannot capture image. Please try again.', true);
+            }
+        });
+        
+        // Retake photo
+        retakeBtn.addEventListener('click', function() {
+            snapshotContainer.style.display = 'none';
+            cameraContainer.style.display = 'block';
+        });
+        
+        // Process captured image
+        processBtn.addEventListener('click', function() {
+            showMessage('Processing QR code...', false);
+            
+            try {
+                // Convert canvas to Blob/File
+                snapshotCanvas.toBlob(function(blob) {
+                    // Create a File object from the Blob
+                    const capturedImage = new File([blob], "captured-qr.png", { type: "image/png" });
+                    
+                    // Create FormData just like in the upload flow
+                    const formData = new FormData();
+                    formData.append('qr_image', capturedImage);  // Use the same field name as in upload form
+                    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                    
+                    // Use the same endpoint and process as the upload form
+                    fetch('{% url "authorities:qr_verification" %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showMessage('QR Code verified successfully! Redirecting...', false);
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 1500);
+                        } else {
+                            showMessage(data.message, true);
+                        }
+                    })
+                    .catch(error => {
+                        showMessage('Error: ' + error, true);
+                        console.error("Processing error:", error);
+                    });
+                }, 'image/png', 0.95);  // High quality PNG
+                
+            } catch (error) {
+                showMessage('Error processing QR code: ' + error.message, true);
+                console.error("QR processing error:", error);
+            }
+        });
+        
+        // Handle tab switching to ensure camera is stopped when switching tabs
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function() {
+                if (this.id !== 'capture-tab') {
+                    stopCamera();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

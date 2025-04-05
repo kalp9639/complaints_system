@@ -4,6 +4,7 @@ from . import views
 app_name = 'authorities'
 
 urlpatterns = [
+    path('qr-verification/', views.AuthorityQRVerificationView.as_view(), name='qr_verification'),
     path('signup/', views.OfficialSignUpView.as_view(), name='official_signup'),
     path('login/', views.OfficialLoginView.as_view(), name='official_login'),
     path('logout/', views.OfficialLogoutView.as_view(), name='official_logout'),

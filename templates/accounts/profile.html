@@ -7,7 +7,7 @@
 <div class="container py-4">
     <div class="row">
         <!-- Left Column - User Info -->
-        <div class="col-lg-8 mb-4">
+        <div class="col-md-8 mb-4">
             <!-- Main Profile Card -->
             <div class="card shadow-sm rounded-3 border-0 mb-4">
                 <div class="card-header bg-gradient bg-primary text-white py-3">
@@ -20,22 +20,31 @@
                 </div>
                 
                 <div class="card-body p-4">
-                    <div class="row g-4">
-                        <!-- Left Side - Basic Info -->
+                    <!-- User Info in Two Columns -->
+                    <div class="row">
                         <div class="col-md-6">
-                            <h5 class="text-primary mb-3">Personal Information</h5>
+                            <h5 class="text-primary mb-3">Account Information</h5>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item px-0 py-2 d-flex border-0">
                                     <span class="fw-semibold text-secondary me-2 w-25">Username:</span>
                                     <span>{{ user.username }}</span>
                                 </li>
                                 <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Name:</span>
-                                    <span>{{ user.first_name }} {{ user.last_name }}</span>
-                                </li>
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
                                     <span class="fw-semibold text-secondary me-2 w-25">Email:</span>
                                     <span>{{ user.email }}</span>
+                                </li>
+                                <li class="list-group-item px-0 py-2 d-flex border-0">
+                                    <span class="fw-semibold text-secondary me-2 w-25">Joined:</span>
+                                    <span>{{ user.date_joined|date:"F j, Y" }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">Personal Details</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item px-0 py-2 d-flex border-0">
+                                    <span class="fw-semibold text-secondary me-2 w-25">Name:</span>
+                                    <span>{{ user.first_name }} {{ user.last_name }}</span>
                                 </li>
                                 <li class="list-group-item px-0 py-2 d-flex border-0">
                                     <span class="fw-semibold text-secondary me-2 w-25">Mobile:</span>
@@ -47,53 +56,21 @@
                                         {% endif %}
                                     </span>
                                 </li>
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Joined:</span>
-                                    <span>{{ user.date_joined|date:"F j, Y" }}</span>
-                                </li>
                             </ul>
-                            
-                            <div class="mt-4">
-                                <a href="{% url 'edit_profile' %}" class="btn btn-primary px-4">
-                                    <i class="fas fa-edit me-2"></i>Edit Profile
-                                </a>
-                            </div>
                         </div>
-                        
-                        <!-- Right Side - Social Accounts -->
-                        <div class="col-md-6">
-                            <h5 class="text-primary mb-3">Connected Accounts</h5>
-                            {% if social_accounts %}
-                                <ul class="list-group mb-3">
-                                    {% for account in social_accounts %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 bg-light rounded mb-2 py-2">
-                                            <div>
-                                                <i class="fab fa-{{ account.provider|lower }} fa-lg me-2"></i>
-                                                {{ account.provider|title }}
-                                            </div>
-                                            <span class="badge bg-success rounded-pill">Connected</span>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                                <a href="{% url 'socialaccount_connections' %}" class="btn btn-outline-primary">
-                                    <i class="fas fa-cog me-2"></i>Manage Accounts
-                                </a>
-                            {% else %}
-                                <div class="bg-light p-3 rounded mb-3 text-center">
-                                    <p class="mb-0 text-muted">No social accounts connected</p>
-                                </div>
-                                <a href="{% url 'socialaccount_connections' %}" class="btn btn-success w-100">
-                                    <i class="fas fa-plug me-2"></i>Connect Social Accounts
-                                </a>
-                            {% endif %}
-                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'edit_profile' %}" class="btn btn-primary px-4">
+                            <i class="fas fa-edit me-2"></i>Edit Profile
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Right Column - Actions -->
-        <div class="col-lg-4">
+        <div class="col-md-4">
             <div class="card shadow-sm rounded-3 border-0">
                 <div class="card-header bg-gradient bg-primary text-white py-3">
                     <h3 class="mb-0">Quick Actions</h3>
