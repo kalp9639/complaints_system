@@ -22,4 +22,5 @@ urlpatterns = [
     path('check-mobile/', views.check_mobile, name='check_mobile'),
     path('social-mobile-verification/', views.SocialMobileVerificationView.as_view(), name='social_mobile_verification'),
     path('verify-social-otp/', views.VerifySocialOTPView.as_view(), name='verify_social_otp'),
+    path('api/overall-trend/', views.get_overall_trend_data_api, name='api_overall_trend_data'),
 ]
