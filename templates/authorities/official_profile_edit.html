@@ -1,89 +1,158 @@
 {% extends 'base.html' %}
 
-{% block content %}
-<div class="container mt-3">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <h1 class="mb-4">Edit Profile</h1>
-        </div>
-    </div>
+{% block title %}Edit Official Profile{% endblock %} {# Updated title #}
 
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card mb-4">
-                <div class="card-header">
-                    Update Profile Information
+{% block content %}
+<div class="container mt-4"> {# Reduced top margin #}
+    <div class="row justify-content-center"> {# Center the content #}
+        <div class="col-lg-8 col-md-10"> {# Slightly wider column #}
+            <h1 class="mb-4 text-center">Edit Official Profile</h1> {# Centered title #}
+
+            {# Display messages #}
+            {% if messages %}
+                <div class="messages mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# Profile Information Card #}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-user-edit me-2"></i>Update Profile Information
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <form method="post" novalidate> {# Removed action from here #}
                         {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                            {{ form.username }}
-                            {% if form.username.errors %}
-                                <div class="text-danger">{{ form.username.errors }}</div>
-                            {% endif %}
+                        <input type="hidden" name="action" value="update_profile"> {# Action for profile update #}
+
+                        <div class="row g-3"> {# Use row/cols for better layout #}
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}<div class="invalid-feedback d-block">{{ form.username.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors|first }}</div>{% endif %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.ward_number.id_for_label }}" class="form-label">Ward Number</label>
+                                {{ form.ward_number }}
+                                {% if form.ward_number.errors %}<div class="invalid-feedback d-block">{{ form.ward_number.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.department.id_for_label }}" class="form-label">Department <small>(Optional)</small></label>
+                                {{ form.department }}
+                                {% if form.department.errors %}<div class="invalid-feedback d-block">{{ form.department.errors|first }}</div>{% endif %}
+                            </div>
+                             <div class="col-12 mb-3">
+                                <label for="{{ form.contact_number.id_for_label }}" class="form-label">Contact Number <small>(Optional)</small></label>
+                                {{ form.contact_number }}
+                                {% if form.contact_number.errors %}<div class="invalid-feedback d-block">{{ form.contact_number.errors|first }}</div>{% endif %}
+                            </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
-                            {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                                <div class="text-danger">{{ form.first_name.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
-                            {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                                <div class="text-danger">{{ form.last_name.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                                <div class="text-danger">{{ form.email.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.ward_number.id_for_label }}" class="form-label">Ward Number</label>
-                            {{ form.ward_number }}
-                            {% if form.ward_number.errors %}
-                                <div class="text-danger">{{ form.ward_number.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.department.id_for_label }}" class="form-label">Department</label>
-                            {{ form.department }}
-                            {% if form.department.errors %}
-                                <div class="text-danger">{{ form.department.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.contact_number.id_for_label }}" class="form-label">Contact Number</label>
-                            {{ form.contact_number }}
-                            {% if form.contact_number.errors %}
-                                <div class="text-danger">{{ form.contact_number.errors }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                            <a href="{% url 'authorities:change_password' %}" class="btn btn-outline-secondary">Change Password</a>
-                            <a href="{% url 'authorities:delete_profile' %}" class="btn btn-outline-danger">Delete Profile</a>
-                            <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-outline-danger">Cancel</a>
+
+                        <div class="d-grid mt-3"> {# Button specific to this form #}
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Profile Changes</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+             {# Password Change Card #}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <i class="fas fa-key me-2"></i>Change Password
+                </div>
+                 <div class="card-body">
+                     <form method="post" novalidate> {# Separate form for password #}
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="change_password"> {# Action for password change #}
+
+                        <div class="mb-3">
+                            <label for="{{ password_form.old_password.id_for_label }}" class="form-label">Current Password</label>
+                            {{ password_form.old_password }}
+                            {% if password_form.old_password.errors %}<div class="invalid-feedback d-block">{{ password_form.old_password.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ password_form.new_password1.id_for_label }}" class="form-label">New Password</label>
+                            {{ password_form.new_password1 }}
+                            {% if password_form.new_password1.help_text %}<div class="form-text">{{ password_form.new_password1.help_text|safe }}</div>{% endif %}
+                            {% if password_form.new_password1.errors %}<div class="invalid-feedback d-block">{{ password_form.new_password1.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ password_form.new_password2.id_for_label }}" class="form-label">Confirm New Password</label>
+                            {{ password_form.new_password2 }}
+                            {% if password_form.new_password2.errors %}<div class="invalid-feedback d-block">{{ password_form.new_password2.errors|first }}</div>{% endif %}
+                        </div>
+
+                         {% if password_form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ password_form.non_field_errors|first }}
+                            </div>
+                         {% endif %}
+
+                         <div class="d-grid"> {# Button specific to this form #}
+                             <button type="submit" class="btn btn-warning"><i class="fas fa-key me-2"></i>Change My Password</button>
+                         </div>
+                     </form>
+                </div>
+            </div>
+
+            {# Other Actions Card #}
+            <div class="card shadow-sm">
+                 <div class="card-header">
+                    <i class="fas fa-cogs me-2"></i>Other Actions
+                </div>
+                 <div class="card-body">
+                     <div class="d-grid gap-2">
+                        {# REMOVED the incorrect change password link #}
+                        <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-secondary"><i class="fas fa-tachometer-alt me-2"></i>Back to Dashboard</a>
+                        <a href="{% url 'authorities:delete_profile' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to deactivate your profile? This action cannot be undone.')"><i class="fas fa-trash-alt me-2"></i>Deactivate Profile</a>
+                    </div>
+                 </div>
+            </div>
+
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add Bootstrap classes dynamically if needed (though widgets might handle it now)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply to profile form
+        document.querySelectorAll('#{{ form.auto_id }} input, #{{ form.auto_id }} select, #{{ form.auto_id }} textarea').forEach(input => {
+            if (input.type !== 'hidden' && input.type !== 'checkbox') {
+                input.classList.add('form-control');
+            }
+        });
+         // Apply to password form
+         document.querySelectorAll('#{{ password_form.auto_id }} input').forEach(input => {
+             if (input.type !== 'hidden') {
+                 input.classList.add('form-control');
+             }
+        });
+    });
+</script>
 {% endblock %}

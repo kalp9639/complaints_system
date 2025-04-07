@@ -1,74 +1,136 @@
 {% extends 'base.html' %}
 
+{% block title %}Official Dashboard - Ward {{ official.ward_number }}{% endblock %}
+
 {% block content %}
-<div class="container mt-3">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">Official Dashboard - Ward {{ official.ward_number }}</h1>
+<div class="container mt-4"> {# Reduced top margin slightly #}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Official Dashboard</h1>
+        <span class="badge bg-primary fs-5">Ward {{ official.ward_number }}</span> {# Moved ward badge #}
+    </div>
+
+    {# Row 1: Key Metrics #}
+    <div class="row g-3 mb-4"> {# Use g-3 for smaller gutters #}
+        <div class="col-md col-6"> {# Use col-md for medium screens and up, col-6 for small #}
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Total Complaints</h6>
+                    <p class="card-text display-5 fw-bold">{{ total_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md col-6">
+            <div class="card text-center shadow-sm h-100 border-danger border-2"> {# Added border #}
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Pending</h6>
+                    <p class="card-text display-5 fw-bold text-danger">{{ pending_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md col-6">
+             <div class="card text-center shadow-sm h-100 border-primary border-2"> {# Added border #}
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">In Progress</h6>
+                    <p class="card-text display-5 fw-bold text-primary">{{ in_progress_complaints }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md col-6">
+            <div class="card text-center shadow-sm h-100 border-success border-2"> {# Added border #}
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Resolved</h6>
+                    <p class="card-text display-5 fw-bold text-success">{{ resolved_complaints }}</p>
+                </div>
+            </div>
+        </div>
+         <div class="col-md col-6"> {# New Card for Resolution Rate #}
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Resolution Rate</h6>
+                    <p class="card-text display-5 fw-bold">{{ resolution_rate|floatformat:1 }}<small>%</small></p>
+                </div>
+            </div>
+        </div>
+         <div class="col-md col-6"> {# New Card for ART #}
+            <div class="card text-center shadow-sm h-100">
+                <div class="card-body d-flex flex-column justify-content-center">
+                    <h6 class="card-subtitle mb-2 text-muted small text-uppercase">Avg Resolve Time</h6>
+                    <p class="card-text display-5 fw-bold">
+                        {% if average_resolution_time is not None %}
+                            {{ average_resolution_time|floatformat:1 }}<small class="fs-6 text-muted"> days</small>
+                        {% else %}
+                            <span class="fs-4 text-muted">N/A</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card text-center mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Total Complaints</h5>
-                    <p class="card-text display-4">{{ total_complaints }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Pending Complaints</h5>
-                    <p class="card-text display-4">{{ pending_complaints }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">In Progress</h5>
-                    <p class="card-text display-4">{{ in_progress_complaints }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Resolved</h5>
-                    <p class="card-text display-4">{{ resolved_complaints }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <div class="card">
+    {# Row 2: Actions and Oldest Complaints #}
+    <div class="row g-4">
+        {# Left Column: Actions & Profile #}
+        <div class="col-lg-4">
+             <div class="card shadow-sm mb-4">
                 <div class="card-header">
-                    Quick Actions
+                    <i class="fas fa-rocket me-2"></i>Quick Actions
                 </div>
                 <div class="card-body">
-                    <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-primary mb-2 w-100">View Complaints</a>
-                    <a href="{% url 'authorities:authority_complaints_map' %}" class="btn btn-info mb-2 w-100">Complaints Map</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    Profile Information
-                </div>
-                <div class="card-body">
-                    <p><strong>Name:</strong> {{ official.user.get_full_name }}</p>
-                    <p><strong>Username:</strong> {{ official.user.username }}</p>
-                    <p><strong>Ward Number:</strong> {{ official.ward_number }}</p>
-                    <p><strong>Department:</strong> {{ official.department|default:'Not Specified' }}</p>
-                    <div class="mt-3">
-                        <a href="{% url 'authorities:edit_profile' %}" class="btn btn-outline-primary">Edit Profile</a>
+                    <div class="d-grid gap-2">
+                         <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-primary"><i class="fas fa-list me-2"></i>View Complaints List</a>
+                         <a href="{% url 'authorities:authority_complaints_map' %}" class="btn btn-info text-white"><i class="fas fa-map-marked-alt me-2"></i>View Complaints Map</a>
                     </div>
                 </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header">
+                   <i class="fas fa-user-cog me-2"></i> Profile Information
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ official.user.get_full_name|default:official.user.username }}</p>
+                    <p><strong>Username:</strong> {{ official.user.username }}</p>
+                    {# <p><strong>Ward Number:</strong> {{ official.ward_number }}</p> #}
+                    <p><strong>Department:</strong> {{ official.department|default:'N/A' }}</p>
+                    <p><strong>Contact:</strong> {{ official.contact_number|default:'N/A' }}</p>
+                    <div class="mt-3 d-grid">
+                        <a href="{% url 'authorities:edit_profile' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-edit me-2"></i>Edit Profile & Password</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Right Column: Oldest Pending Complaints #}
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                 <div class="card-header">
+                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Oldest Pending/In Progress Complaints
+                </div>
+                <div class="card-body">
+                    {% if oldest_pending_complaints %}
+                        <div class="list-group list-group-flush">
+                            {% for complaint in oldest_pending_complaints %}
+                                <a href="{% url 'authorities:complaint_detail' complaint.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="fw-bold me-2">#{{ complaint.id }} - {{ complaint.get_complaint_type_display }}</span>
+                                        <small class="text-muted">({{ complaint.created_at|date:"d M Y" }})</small>
+                                    </div>
+                                    <span class="badge {% if complaint.status == 'Pending' %}bg-danger{% else %}bg-primary{% endif %} rounded-pill">
+                                        {{ complaint.status }}
+                                    </span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success text-center mb-0">
+                           <i class="fas fa-check-circle me-2"></i> No pending or in-progress complaints found in your ward. Great job!
+                        </div>
+                    {% endif %}
+                </div>
+                {% if oldest_pending_complaints %}
+                 <div class="card-footer text-center">
+                    <a href="{% url 'authorities:authority_complaints_list' %}?status=Pending&sort=oldest" class="btn btn-link btn-sm">View all pending...</a>
+                 </div>
+                {% endif %}
             </div>
         </div>
     </div>

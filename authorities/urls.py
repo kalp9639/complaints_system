@@ -12,10 +12,10 @@ urlpatterns = [
     path('complaints/', views.AuthorityComplaintsListView.as_view(), name='authority_complaints_list'),
     path('complaints/map/', views.AuthorityComplaintsMapView.as_view(), name='authority_complaints_map'),
     path('complaint/<int:complaint_id>/update/', views.UpdateComplaintStatusView.as_view(), name='update_complaint_status'),
-    path('complaints/view/', views.OfficialComplaintsView.as_view(), name='official_complaints_view'),
+    # path('complaints/view/', views.OfficialComplaintsView.as_view(), name='official_complaints_view'), # <-- REMOVE OR COMMENT OUT THIS LINE
     path('complaint/detail/<int:pk>/', views.ComplaintDetailView.as_view(), name='complaint_detail'),
-    path('base-update/', views.BaseTemplateUpdateView.as_view(), name='base_template_update'),
+    # path('base-update/', views.BaseTemplateUpdateView.as_view(), name='base_template_update'), # This was also likely removed/redundant
     path('profile/edit/', views.OfficialProfileUpdateView.as_view(), name='edit_profile'),
-    path('profile/change-password/', views.ChangePasswordView.as_view(), name='change_password'),
+    # path('profile/change-password/', views.ChangePasswordView.as_view(), name='change_password'), # Password change is now part of edit_profile view
     path('delete-profile/', views.OfficialDeleteProfileView.as_view(), name='delete_profile'),
 ]
