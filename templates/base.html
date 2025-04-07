@@ -4,27 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Civic Complaints System{% endblock %}</title>
-    
+
     {# Bootstrap CSS #}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/validation.css' %}">
     <link rel="stylesheet" href="{% static 'css/messages.css' %}">
-    
+
     {# Bootstrap Icons #}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
+
     {# Font Awesome (Optional - if used elsewhere) #}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+
     {# Custom CSS Block #}
     {% block extra_css %}{% endblock %}
-    
+
     <style>
         html, body {
             height: 100%;
         }
-        
+
         body {
             display: flex;
             flex-direction: column;
@@ -32,26 +32,26 @@
             background-color: #f8f9fa;
             margin: 0;
         }
-        
+
         main.content-wrapper {
             flex: 1 0 auto;
             padding-top: 70px; /* Increased slightly for fixed navbar */
             padding-bottom: 60px; /* Reduced slightly */
         }
-        
+
         .navbar {
             /* Removed margin-bottom as it's fixed-top */
             box-shadow: 0 2px 4px rgba(0,0,0,.1); /* Optional: Add shadow to fixed navbar */
         }
-        
+
         .card {
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        
+
         .card-header {
             font-weight: bold;
         }
-        
+
         .site-footer {
             flex-shrink: 0;
             background-color: #212529; /* Same as Bootstrap's bg-dark */
@@ -109,13 +109,14 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto align-items-center"> {# Added align-items-center for vertical alignment #}
+                    <ul class="navbar-nav ms-auto align-items-center"> {# <<< START OF UPDATED BLOCK >>> #}
                         <li class="nav-item">
                             <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
                         </li>
-                        
+
                         {% if user.is_authenticated %}
-                            {# Links based on user type #}
+                            {# --- Logged-in User Links --- #}
+
                             {% if is_official %}
                                 <!-- Government Officials' Navbar -->
                                 <li class="nav-item">
@@ -127,6 +128,17 @@
                                 <li class="nav-item">
                                     <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_map' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_map' %}">Complaints Map</a>
                                 </li>
+                                 <li class="nav-item dropdown"> {# Added Dropdown for Profile/Logout #}
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownOfficial" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-user-shield me-1"></i> {{ user.username }}
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownOfficial">
+                                        <li><a class="dropdown-item" href="{% url 'authorities:edit_profile' %}">Edit Profile</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">Logout</a></li>
+                                    </ul>
+                                </li>
+
                             {% else %}
                                 <!-- Normal Users' Navbar -->
                                 <li class="nav-item">
@@ -138,47 +150,43 @@
                                 <li class="nav-item">
                                     <a class="nav-link {% if request.resolver_match.url_name == 'view_complaints' %}active{% endif %}" href="{% url 'view_complaints' %}">View Complaints</a>
                                 </li>
+                                 {# --- Notification Trigger Button (Only for Non-Officials) --- #}
+                                <li class="nav-item ms-1">
+                                    <button class="btn btn-secondary position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#notificationSlider" aria-controls="notificationSlider">
+                                        <i class="bi bi-bell-fill"></i>
+                                        {% if unread_notification_count > 0 %}
+                                        <span class="badge rounded-pill bg-danger">
+                                            {{ unread_notification_count }}
+                                        </span>
+                                        {% endif %}
+                                    </button>
+                                </li>
+                                {# --- End Notification Trigger Button --- #}
+                                <li class="nav-item ms-1"> {# Common Logout for Citizen #}
+                                    <a class="nav-link" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+                                </li>
                             {% endif %}
-                            
-                            {# --- Notification Trigger Button (Only for Non-Officials) --- #}
-                            {% if not is_official %} 
-                            <li class="nav-item ms-1"> 
-                                <button class="btn btn-secondary position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#notificationSlider" aria-controls="notificationSlider">
-                                    <i class="bi bi-bell-fill"></i>
-                                    {% if unread_notification_count > 0 %}
-                                    <span class="badge rounded-pill bg-danger">
-                                        {{ unread_notification_count }}
-                                    </span>
-                                    {% endif %}
-                                </button>
-                            </li>
-                            {% endif %} {# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< #}
-                            {# --- End Notification Trigger Button --- #}
 
-                            {# Inside the {% if user.is_authenticated %} block in base.html #}
-
-                            <li class="nav-item ms-1"> {# Added margin for spacing #}
-                                {# Add onclick attribute for confirmation #}
-                                <a class="nav-link" href="{% url 'logout' %}"
-                                onclick="return confirm('Are you sure you want to logout?');">
-                                Logout
-                                </a>
-                            </li>
                         {% else %}
-                            <!-- Guests' Navbar -->
+                            {# --- Guest Links --- #}
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.resolver_match.url_name == 'signup' %}active{% endif %}" href="{% url 'signup' %}">Sign Up</a>
                             </li>
+                            <li class="nav-item"> {# New Officials Link #}
+                                <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'login' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:official_login' %}">
+                                    <i class="fas fa-user-shield me-1"></i> Officials {# Added icon #}
+                                </a>
+                            </li>
                         {% endif %}
-                    </ul>
+                    </ul> {# <<< END OF UPDATED BLOCK >>> #}
                 </div>
             </div>
         </nav>
     </header>
-    
+
     <main class="content-wrapper container mt-4">
         {# Display Django messages framework messages #}
         {% if messages %}
@@ -191,11 +199,11 @@
                 {% endfor %}
             </div>
         {% endif %}
-        
+
         {# Main content block for child templates #}
         {% block content %}{% endblock %}
     </main>
-    
+
     <footer class="site-footer py-4 bg-dark text-white mt-auto"> {# Added text-white and mt-auto #}
         <div class="container">
             <div class="row">
@@ -234,15 +242,15 @@
         {% include "notifications/_notification_slider.html" %}
     {% endif %}
     {# --- End Notification Slider Include --- #}
-    
+
     {# Bootstrap JS Bundle (includes Popper) #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     {# Custom JS Block #}
     {% block extra_js %}
     <script src="{% static 'js/form-validation.js' %}"></script>
     {% endblock %}
-    
+
     {# Auto-dismiss alerts after 5 seconds #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {

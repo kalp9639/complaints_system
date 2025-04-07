@@ -1,12 +1,9 @@
 {# templates/accounts/_home_content_conditional.html #}
 {% if not user.is_authenticated %}
+    {# Only keep the introductory text #}
     <p class="lead">Report issues in your community to help make it a better place to live.</p>
-    <div class="mt-4">
-        <a href="{% url 'signup' %}" class="btn btn-primary btn-lg me-2">Citizen Sign Up</a>
-        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg me-2">Citizen Login</a>
-        <a href="{% url 'authorities:qr_verification' %}" class="btn btn-secondary btn-lg me-2">Authority Sign Up</a>
-        <a href="{% url 'authorities:official_login' %}" class="btn btn-outline-secondary btn-lg">Authority Login</a>
-    </div>
+    {# The div containing login/signup buttons has been REMOVED #}
+
 {% elif is_official %}
     <p class="lead">Manage and resolve complaints assigned to your ward.</p>
     <div class="mt-4">
