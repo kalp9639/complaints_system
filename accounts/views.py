@@ -29,83 +29,165 @@ from django.core.mail import EmailMultiAlternatives
 from twilio.base.exceptions import TwilioRestException
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from django.contrib.auth import authenticate
-import logging 
-
 import logging
+
 import json
-from datetime import date, timedelta, datetime # Add datetime
-from django.utils import timezone # Import timezone
-from django.shortcuts import render, redirect
-from django.views.generic import TemplateView
-from django.db.models import Count, Q, Min, Avg, F, DurationField # Import Avg, F, DurationField
-from django.db.models.functions import TruncDate, Cast # Import Cast
+from datetime import date, timedelta, datetime
+from django.db import models # Make sure models is imported
+from django.db.models import Count, Q, Min, Avg, F, DurationField
+from django.db.models.functions import TruncDate, TruncMonth # Use TruncMonth for year view
 from complaints.models import Complaint
 from authorities.models import ComplaintUpdate
-from django.http import JsonResponse # For API endpoint
-from django.urls import reverse 
+from dateutil.relativedelta import relativedelta # Make sure this is imported
 
 logger = logging.getLogger(__name__)
 
+# --- Helper Function for ART Calculation ---
 def calculate_art_per_ward(complaints_queryset):
     """Calculates Average Resolution Time (in days) per ward for a given Complaint queryset."""
     art_data = {}
     try:
-        # Get resolved complaints from the queryset
         resolved_complaints = complaints_queryset.filter(status='Resolved')
-
-        # Find the first 'Resolved' update timestamp for each resolved complaint
         resolution_times = ComplaintUpdate.objects.filter(
             complaint__in=resolved_complaints,
             status='Resolved'
         ).values(
-            'complaint_id', 'complaint__ward_number', 'complaint__created_at' # Include ward and created_at
+            'complaint_id', 'complaint__ward_number', 'complaint__created_at'
         ).annotate(
             first_resolved_at=Min('updated_at')
         )
 
-        # Calculate duration for each complaint
         durations = []
         for rt in resolution_times:
             if rt['first_resolved_at'] and rt['complaint__created_at']:
-                # Ensure both are timezone-aware if USE_TZ=True
                 created_at = rt['complaint__created_at']
                 resolved_at = rt['first_resolved_at']
-                # Make naive if necessary for subtraction, or ensure both are aware
-                if timezone.is_aware(created_at) and not timezone.is_aware(resolved_at):
-                     resolved_at = timezone.make_aware(resolved_at, timezone.get_default_timezone())
-                elif not timezone.is_aware(created_at) and timezone.is_aware(resolved_at):
-                     created_at = timezone.make_aware(created_at, timezone.get_default_timezone())
+
+                # Ensure consistent timezone awareness before subtraction
+                if settings.USE_TZ:
+                    if timezone.is_naive(created_at):
+                        created_at = timezone.make_aware(created_at, timezone.get_default_timezone())
+                    if timezone.is_naive(resolved_at):
+                        # Attempt to make aware, handle potential errors if datetime is ambiguous
+                        try:
+                             resolved_at = timezone.make_aware(resolved_at, timezone.get_default_timezone())
+                        except Exception as tz_err:
+                             logger.warning(f"Could not make resolved_at ({resolved_at}) aware for complaint {rt['complaint_id']}: {tz_err}")
+                             continue # Skip if timezone conversion fails
+
+                # Ensure comparison is valid (both aware or both naive)
+                if timezone.is_aware(created_at) != timezone.is_aware(resolved_at):
+                    logger.warning(f"Timezone mismatch between created_at and resolved_at for complaint {rt['complaint_id']}. Skipping ART calculation.")
+                    continue # Skip if mismatch remains
 
                 duration = resolved_at - created_at
-                if duration.total_seconds() > 0: # Ignore negative durations if any edge cases
+                if duration.total_seconds() >= 0: # Allow zero duration, filter negative
                     durations.append({
                         'ward': rt['complaint__ward_number'],
                         'duration': duration
                     })
+                else:
+                    logger.warning(f"Negative duration calculated for complaint {rt['complaint_id']}. Skipping.")
 
-        # Group durations by ward
+
         ward_durations = {}
         for d in durations:
             ward = d['ward']
-            if ward: # Only consider complaints with a ward
+            if ward:
                 if ward not in ward_durations:
                     ward_durations[ward] = []
                 ward_durations[ward].append(d['duration'])
 
-        # Calculate average duration per ward in days
         for ward, duration_list in ward_durations.items():
             if duration_list:
                 avg_duration = sum(duration_list, timedelta()) / len(duration_list)
-                art_data[ward] = round(avg_duration.total_seconds() / (60 * 60 * 24), 1) # Convert to days, 1 decimal
+                art_data[ward] = round(avg_duration.total_seconds() / (60 * 60 * 24), 1)
 
     except Exception as e:
         logger.error(f"Error calculating ART per ward: {e}", exc_info=True)
 
-    # Sort by ward number (treating as numbers if possible)
     sorted_art_data = dict(sorted(art_data.items(), key=lambda item: int(item[0]) if item[0].isdigit() else float('inf')))
-
     return sorted_art_data
-# --- End Helper Function ---
+# --- End ART Helper ---
+
+
+# --- Helper for Trend Calculation ---
+def calculate_trend_data(timespan, base_queryset):
+    """Calculates created vs resolved trend data."""
+    today = timezone.localdate() # Use timezone-aware local date
+    data = {'labels': [], 'created_counts': [], 'resolved_counts': []}
+    date_grouper = None
+    res_date_grouper = None
+    date_keys = [] # Initialize date_keys
+
+    try:
+        if timespan == 'year':
+            # Last 12 full months ending last month
+            first_day_current_month = today.replace(day=1)
+            end_date = first_day_current_month - timedelta(days=1) # End of last month
+            start_date = end_date.replace(day=1) - relativedelta(months=11) # 1st day of 12 months ago
+            date_grouper = TruncMonth('created_at')
+            res_date_grouper = TruncMonth('updated_at') # Group resolution by month of update
+            date_format = '%b %Y'
+            date_keys = [(start_date + relativedelta(months=i)).replace(day=1) for i in range(12)]
+            data['labels'] = [d.strftime(date_format) for d in date_keys]
+
+        elif timespan == 'week':
+            start_date = today - timedelta(days=6)
+            end_date = today
+            date_grouper = TruncDate('created_at')
+            res_date_grouper = TruncDate('updated_at') # Group resolution by day of update
+            date_format = '%a, %b %d' # More specific label for week view
+            date_keys = [start_date + timedelta(days=i) for i in range(7)]
+            data['labels'] = [d.strftime(date_format) for d in date_keys]
+
+        else: # Default to month (last 30 days)
+            start_date = today - timedelta(days=29)
+            end_date = today
+            date_grouper = TruncDate('created_at')
+            res_date_grouper = TruncDate('updated_at') # Group resolution by day of update
+            date_format = '%b %d'
+            date_keys = [start_date + timedelta(days=i) for i in range(30)]
+            data['labels'] = [d.strftime(date_format) for d in date_keys]
+
+        logger.debug(f"Trend calculation for '{timespan}': Start={start_date}, End={end_date}")
+
+        # --- Created Counts ---
+        created_counts_qs = base_queryset.filter(
+            created_at__date__gte=start_date, created_at__date__lte=end_date
+        ).annotate(
+            grouping_date=date_grouper
+        ).values('grouping_date').annotate(count=Count('id')).order_by('grouping_date')
+        created_counts_dict = {item['grouping_date']: item['count'] for item in created_counts_qs if item['grouping_date']}
+        logger.debug(f"Created Counts Dict ({timespan}): {created_counts_dict}")
+
+        # --- Resolved Counts ---
+        resolved_updates = ComplaintUpdate.objects.filter(
+            complaint__in=base_queryset,
+            status='Resolved',
+            updated_at__date__gte=start_date,
+            updated_at__date__lte=end_date,
+        ).annotate(
+            grouping_date=res_date_grouper
+        ).values('grouping_date').annotate(
+            count=Count('complaint_id', distinct=True)
+        ).order_by('grouping_date')
+        resolved_counts_dict = {item['grouping_date']: item['count'] for item in resolved_updates if item['grouping_date']}
+        logger.debug(f"Resolved Counts Dict ({timespan}): {resolved_counts_dict}")
+
+        # Map counts to the date range/keys
+        data['created_counts'] = [created_counts_dict.get(key, 0) for key in date_keys]
+        data['resolved_counts'] = [resolved_counts_dict.get(key, 0) for key in date_keys]
+
+    except Exception as e:
+         logger.error(f"Error during trend calculation (timespan: {timespan}): {e}", exc_info=True)
+         # Return empty data structure on error to prevent JS issues
+         data = {'labels': [], 'created_counts': [], 'resolved_counts': []}
+
+
+    logger.debug(f"Final Trend Data ({timespan}): {data}")
+    return data
+# --- End Trend Helper ---
 
 
 class HomeView(TemplateView):
@@ -118,273 +200,109 @@ class HomeView(TemplateView):
         is_official = hasattr(user, 'official_profile') if is_authenticated else False
         context['is_official'] = is_official
 
-        # Shared definitions
         complaint_types_dict = dict(Complaint.COMPLAINT_TYPES)
         status_order = {'Pending': 0, 'In Progress': 1, 'Resolved': 2}
+        context['user_data'] = '{}' # Default to empty JSON string
+        context['overall_data'] = '{}' # Default to empty JSON string
 
-        # Initialize context variables
-        context['user_data'] = {}
-        context['overall_data'] = {}
-
-        # --- 1. User-Specific Stats (Only for Logged-in Citizens) ---
+        # --- User-Specific Stats ---
         if is_authenticated and not is_official:
-            user_complaints = Complaint.objects.filter(
-                user=user,
-                is_trashed=False,
-                is_permanently_deleted=False
-            )
+            user_complaints = Complaint.objects.filter(user=user, is_trashed=False, is_permanently_deleted=False)
             user_data = {}
             try:
-                # User Type Doughnut
+                # Type Doughnut
                 type_counts = user_complaints.values('complaint_type').annotate(count=Count('id')).order_by('complaint_type')
-                user_data['type_chart'] = {
-                    'labels': [complaint_types_dict.get(item['complaint_type'], item['complaint_type'].capitalize()) for item in type_counts],
-                    'values': [item['count'] for item in type_counts]
-                }
+                user_data['type_chart'] = {'labels': [complaint_types_dict.get(item['complaint_type'], item['complaint_type'].capitalize()) for item in type_counts], 'values': [item['count'] for item in type_counts]}
 
-                # User Status Doughnut
+                # Status Doughnut
                 status_counts = user_complaints.values('status').annotate(count=Count('id')).order_by('status')
                 status_counts_sorted = sorted(status_counts, key=lambda x: status_order.get(x['status'], 99))
-                user_data['status_chart'] = {
-                    'labels': [item['status'] for item in status_counts_sorted],
-                    'values': [item['count'] for item in status_counts_sorted]
-                }
+                user_data['status_chart'] = {'labels': [item['status'] for item in status_counts_sorted],'values': [item['count'] for item in status_counts_sorted]}
 
-                # User Grouped Bar (Ward vs Type for User)
-                user_ward_type_counts_qs = user_complaints.filter(
-                    ward_number__isnull=False
-                ).exclude(
-                    ward_number__exact=''
-                ).values(
-                    'ward_number', 'complaint_type'
-                ).annotate(count=Count('id')).order_by('ward_number', 'complaint_type')
-
+                # User Grouped Bar
+                user_ward_type_counts_qs = user_complaints.filter(ward_number__isnull=False).exclude(ward_number__exact='').values('ward_number', 'complaint_type').annotate(count=Count('id')).order_by('ward_number', 'complaint_type')
                 user_processed_ward_type = {}
                 user_all_wards = set()
-                user_all_types = set(complaint_types_dict.keys()) # Use all possible types
-
+                user_all_types = set(complaint_types_dict.keys())
                 for item in user_ward_type_counts_qs:
-                    ward = item['ward_number']
+                    ward = item['ward_number']; ctype = item['complaint_type']; count = item['count']
                     if not ward: continue
-                    ctype = item['complaint_type']
-                    count = item['count']
-                    if ward not in user_processed_ward_type:
-                        user_processed_ward_type[ward] = {}
+                    if ward not in user_processed_ward_type: user_processed_ward_type[ward] = {}
                     user_processed_ward_type[ward][ctype] = count
                     user_all_wards.add(ward)
-
                 user_sorted_wards = sorted(list(user_all_wards), key=lambda w: int(w) if w.isdigit() else float('inf'))
                 user_sorted_types = sorted(list(user_all_types))
-                 # Consistent colors
                 user_type_colors = { 'garbage': '#8B4513', 'pothole': '#9db17c', 'cattle': '#a6a6a6' }
-
                 user_grouped_bar_datasets = []
                 for ctype_key in user_sorted_types:
-                    user_grouped_bar_datasets.append({
-                        'label': complaint_types_dict.get(ctype_key, ctype_key.capitalize()),
-                        'data': [user_processed_ward_type.get(ward, {}).get(ctype_key, 0) for ward in user_sorted_wards],
-                        'backgroundColor': user_type_colors.get(ctype_key, '#6c757d')
-                    })
-                user_data['ward_type_grouped_bar'] = {
-                    'labels': user_sorted_wards,
-                    'datasets': user_grouped_bar_datasets
-                }
+                    user_grouped_bar_datasets.append({'label': complaint_types_dict.get(ctype_key, ctype_key.capitalize()), 'data': [user_processed_ward_type.get(ward, {}).get(ctype_key, 0) for ward in user_sorted_wards], 'backgroundColor': user_type_colors.get(ctype_key, '#6c757d')})
+                user_data['ward_type_grouped_bar'] = {'labels': user_sorted_wards, 'datasets': user_grouped_bar_datasets}
 
-                # User ART per Ward Bar Chart
+                # User ART per Ward
                 user_art_data = calculate_art_per_ward(user_complaints)
-                user_data['art_per_ward'] = {
-                    'labels': list(user_art_data.keys()),
-                    'values': list(user_art_data.values())
-                }
+                user_data['art_per_ward'] = {'labels': list(user_art_data.keys()), 'values': list(user_art_data.values())}
 
             except Exception as e:
                 logger.error(f"Error calculating user-specific stats for {user.username}: {e}", exc_info=True)
-            context['user_data'] = json.dumps(user_data) # Serialize user data
+            context['user_data'] = json.dumps(user_data)
 
-        # --- 2. Overall Statistics (Only for Guests) ---
-        elif not is_authenticated: # Only calculate for guests
-            overall_complaints = Complaint.objects.filter(
-                is_trashed=False,
-                is_permanently_deleted=False
-            )
+        # --- Overall Statistics (Guests Only) ---
+        elif not is_authenticated: # <--- Corrected Indentation Level for this elif
+            overall_complaints = Complaint.objects.filter(is_trashed=False, is_permanently_deleted=False)
             overall_data = {}
-            try:
+            try: # <--- Corrected Indentation Level for this try
                 # Overall Type Doughnut
                 overall_type_counts_qs = overall_complaints.values('complaint_type').annotate(count=Count('id')).order_by('complaint_type')
-                overall_data['type_chart'] = {
-                    'labels': [complaint_types_dict.get(item['complaint_type'], item['complaint_type'].capitalize()) for item in overall_type_counts_qs],
-                    'values': [item['count'] for item in overall_type_counts_qs]
-                }
+                overall_data['type_chart'] = {'labels': [complaint_types_dict.get(item['complaint_type'], item['complaint_type'].capitalize()) for item in overall_type_counts_qs], 'values': [item['count'] for item in overall_type_counts_qs]}
 
                 # Overall Status Doughnut
                 overall_status_counts_qs = overall_complaints.values('status').annotate(count=Count('id')).order_by('status')
                 overall_status_counts_sorted = sorted(overall_status_counts_qs, key=lambda x: status_order.get(x['status'], 99))
-                overall_data['status_chart'] = {
-                    'labels': [item['status'] for item in overall_status_counts_sorted],
-                    'values': [item['count'] for item in overall_status_counts_sorted]
-                }
+                overall_data['status_chart'] = {'labels': [item['status'] for item in overall_status_counts_sorted], 'values': [item['count'] for item in overall_status_counts_sorted]}
 
-                # Overall Grouped Bar (Ward vs Type) - Reuse logic from previous step if available
-                overall_ward_type_counts_qs = overall_complaints.filter(
-                    ward_number__isnull=False
-                ).exclude(
-                    ward_number__exact=''
-                ).values(
-                    'ward_number', 'complaint_type'
-                ).annotate(count=Count('id')).order_by('ward_number', 'complaint_type')
-
+                # Overall Grouped Bar
+                overall_ward_type_counts_qs = overall_complaints.filter(ward_number__isnull=False).exclude(ward_number__exact='').values('ward_number', 'complaint_type').annotate(count=Count('id')).order_by('ward_number', 'complaint_type')
                 overall_processed_ward_type = {}
                 overall_all_wards = set()
                 overall_all_types = set(complaint_types_dict.keys())
-
                 for item in overall_ward_type_counts_qs:
-                    ward = item['ward_number']
+                    ward = item['ward_number']; ctype = item['complaint_type']; count = item['count']
                     if not ward: continue
-                    ctype = item['complaint_type']
-                    count = item['count']
-                    if ward not in overall_processed_ward_type:
-                        overall_processed_ward_type[ward] = {}
+                    if ward not in overall_processed_ward_type: overall_processed_ward_type[ward] = {}
                     overall_processed_ward_type[ward][ctype] = count
                     overall_all_wards.add(ward)
-
                 overall_sorted_wards = sorted(list(overall_all_wards), key=lambda w: int(w) if w.isdigit() else float('inf'))
                 overall_sorted_types = sorted(list(overall_all_types))
                 overall_type_colors = { 'garbage': '#8B4513', 'pothole': '#9db17c', 'cattle': '#a6a6a6' }
-
                 overall_grouped_bar_datasets = []
                 for ctype_key in overall_sorted_types:
-                    overall_grouped_bar_datasets.append({
-                        'label': complaint_types_dict.get(ctype_key, ctype_key.capitalize()),
-                        'data': [overall_processed_ward_type.get(ward, {}).get(ctype_key, 0) for ward in overall_sorted_wards],
-                        'backgroundColor': overall_type_colors.get(ctype_key, '#6c757d')
-                    })
-                overall_data['ward_type_grouped_bar'] = {
-                    'labels': overall_sorted_wards,
-                    'datasets': overall_grouped_bar_datasets
-                }
+                    overall_grouped_bar_datasets.append({'label': complaint_types_dict.get(ctype_key, ctype_key.capitalize()), 'data': [overall_processed_ward_type.get(ward, {}).get(ctype_key, 0) for ward in overall_sorted_wards], 'backgroundColor': overall_type_colors.get(ctype_key, '#6c757d')})
+                overall_data['ward_type_grouped_bar'] = {'labels': overall_sorted_wards, 'datasets': overall_grouped_bar_datasets}
 
-                # Overall Heatmap Data Structure
-                overall_data['heatmap'] = {
-                    'wards': overall_sorted_wards,
-                    'types': overall_sorted_types,
-                    'type_names': complaint_types_dict,
-                    'data': overall_processed_ward_type
-                }
+                # Overall Heatmap
+                overall_data['heatmap'] = {'wards': overall_sorted_wards, 'types': overall_sorted_types, 'type_names': complaint_types_dict, 'data': overall_processed_ward_type}
 
-                # Overall Resolution Trend (Line Chart - Default 30 days)
-                # NOTE: Dynamic timeframe handled by JS + API endpoint (created below)
-                timespan = self.request.GET.get('timespan', 'month') # Default to month
-                trend_data = calculate_trend_data(timespan, overall_complaints) # Use helper
-                overall_data['resolution_trend'] = trend_data
+                # Overall Resolution Trend (Initial Load - Default 'month')
+                initial_timespan = 'month'
+                trend_data = calculate_trend_data(initial_timespan, overall_complaints) # Use helper
+                overall_data['resolution_trend'] = trend_data # Store calculated data
 
-                # Overall ART per Ward Bar Chart
+                # Overall ART per Ward
                 overall_art_data = calculate_art_per_ward(overall_complaints)
-                overall_data['art_per_ward'] = {
-                    'labels': list(overall_art_data.keys()),
-                    'values': list(overall_art_data.values())
-                }
+                overall_data['art_per_ward'] = {'labels': list(overall_art_data.keys()), 'values': list(overall_art_data.values())}
 
-            except Exception as e:
+            except Exception as e: # <--- Corrected Indentation Level for this except
                 logger.error(f"Error calculating overall stats for guest: {e}", exc_info=True)
-            context['overall_data'] = json.dumps(overall_data) # Serialize overall data
+            context['overall_data'] = json.dumps(overall_data) # <--- Corrected Indentation Level
 
-        return context
+        return context # <--- Corrected Indentation Level
 
-# --- Helper for Trend Calculation ---
-def calculate_trend_data(timespan, base_queryset):
-    today = date.today()
-    if timespan == 'year':
-        start_date = today.replace(day=1, month=1) - timedelta(days=1) # End of prev year
-        start_date = start_date.replace(day=1) # Start of first month of prev year? No, let's do last 12 months
-        start_date = (today.replace(day=1) - timedelta(days=1)).replace(day=1) # Start of prev month
-        start_date = start_date.replace(year=start_date.year -1 ) # Start of 12 months ago
-        delta = timedelta(days=30) # Approximate month step
-        num_periods = 12
-        date_format = '%b %Y' # Month-Year format
-        date_grouper = TruncDate('created_at', 'month', output_field=models.DateField())
-        res_date_grouper = TruncDate('resolution_timestamp', 'month', output_field=models.DateField())
-
-    elif timespan == 'week':
-        start_date = today - timedelta(days=6)
-        delta = timedelta(days=1)
-        num_periods = 7
-        date_format = '%a' # Day of week
-        date_grouper = TruncDate('created_at')
-        res_date_grouper = TruncDate('resolution_timestamp')
-    else: # Default to month (last 30 days)
-        start_date = today - timedelta(days=29)
-        delta = timedelta(days=1)
-        num_periods = 30
-        date_format = '%b %d' # Month-Day format
-        date_grouper = TruncDate('created_at')
-        res_date_grouper = TruncDate('resolution_timestamp')
-
-
-    date_range_objects = [start_date + timedelta(days=i) for i in range(num_periods)] if timespan != 'year' else [ (start_date.replace(day=1) + relativedelta(months=i)) for i in range(num_periods)]
-    # Correct date range generation for 'year' might need python-dateutil: from dateutil.relativedelta import relativedelta
-    # Simplified approach for year: Group by month directly in query if possible, or generate labels differently.
-    # Let's stick to daily/weekly for now for simplicity or group monthly below.
-
-    # For simplicity, we'll stick to daily for 'month' and 'week', and adjust label formatting
-    if timespan == 'year': # Redo range generation for year (approx monthly labels)
-       date_range_objects = [ (start_date + relativedelta(months=i)).replace(day=1) for i in range(num_periods)]
-       date_labels = [d.strftime(date_format) for d in date_range_objects]
-       date_grouper = TruncDate('created_at', 'month', output_field=models.DateField())
-       res_date_grouper = TruncDate('resolution_timestamp', 'month', output_field=models.DateField())
-    else:
-        date_range_objects = [start_date + delta*i for i in range(num_periods)]
-        date_labels = [d.strftime(date_format) for d in date_range_objects]
-
-
-    # --- Created Counts ---
-    created_counts_qs = base_queryset.filter(
-        created_at__date__gte=start_date
-    ).annotate(
-        grouping_date=date_grouper
-    ).values('grouping_date').annotate(count=Count('id')).order_by('grouping_date')
-    created_counts_dict = {item['grouping_date']: item['count'] for item in created_counts_qs}
-
-    # --- Resolved Counts ---
-    resolved_updates = ComplaintUpdate.objects.filter(
-        status='Resolved',
-        updated_at__date__gte=start_date,
-        complaint__in=base_queryset
-    ).values('complaint_id').annotate(
-        resolution_timestamp=Min('updated_at')
-    ).filter(resolution_timestamp__isnull=False).annotate( # Ensure Min worked
-         grouping_date=res_date_grouper
-    )
-    resolved_counts_qs = resolved_updates.values('grouping_date').annotate(
-         count=Count('complaint_id', distinct=True) # Count distinct complaints resolved in the period
-     ).order_by('grouping_date')
-    resolved_counts_dict = {item['grouping_date']: item['count'] for item in resolved_counts_qs}
-
-    # Map counts to the date range (handle potential type mismatch for year grouping)
-    if timespan == 'year':
-        # Match by year and month
-        created_values = [created_counts_dict.get(d.replace(day=1), 0) for d in date_range_objects]
-        resolved_values = [resolved_counts_dict.get(d.replace(day=1), 0) for d in date_range_objects]
-    else:
-        created_values = [created_counts_dict.get(d, 0) for d in date_range_objects]
-        resolved_values = [resolved_counts_dict.get(d, 0) for d in date_range_objects]
-
-
-    return {
-        'labels': date_labels,
-        'created_counts': created_values,
-        'resolved_counts': resolved_values
-    }
 
 # --- API View for Trend Data ---
-# Add this view function inside accounts/views.py
-# You might need: from django.http import JsonResponse
-# You might need: from django.db import models (if not already imported)
-# You might need: from dateutil.relativedelta import relativedelta (install if needed: pip install python-dateutil)
-from dateutil.relativedelta import relativedelta # Add this import
-
 def get_overall_trend_data_api(request):
     """API endpoint to fetch overall trend data based on timespan."""
     timespan = request.GET.get('timespan', 'month') # week, month, year
+    logger.info(f"API request received for trend data with timespan: {timespan}")
     try:
         overall_complaints = Complaint.objects.filter(
             is_trashed=False,
