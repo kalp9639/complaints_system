@@ -31,17 +31,170 @@ from allauth.socialaccount.models import SocialAccount, SocialLogin
 from django.contrib.auth import authenticate
 import logging 
 
+from django.db.models import Count, Q, F, Min
+from django.db.models.functions import TruncDate
+from django.db import models
+from complaints.models import Complaint
+from authorities.models import ComplaintUpdate
+import json
+from datetime import date, timedelta
+
 logger = logging.getLogger(__name__)
 
 class HomeView(TemplateView):
     template_name = 'accounts/home.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'official_profile'):
-            context['is_official'] = True
-        else:
-            context['is_official'] = False
+        user = self.request.user
+        is_official = hasattr(user, 'official_profile')
+        context['is_official'] = is_official
+
+        # --- Data for User's Doughnut Charts ---
+        user_type_chart_data = {}
+        user_status_chart_data = {}
+        complaint_types_dict = dict(Complaint.COMPLAINT_TYPES) # Define once
+
+        if user.is_authenticated and not is_official:
+            user_complaints = Complaint.objects.filter(
+                user=user,
+                is_trashed=False,
+                is_permanently_deleted=False
+            )
+
+            # User Type Counts
+            type_counts = user_complaints.values('complaint_type').annotate(count=Count('id')).order_by('complaint_type')
+            user_type_chart_data = {
+                'labels': [complaint_types_dict.get(item['complaint_type'], item['complaint_type'].capitalize()) for item in type_counts],
+                'values': [item['count'] for item in type_counts]
+            }
+
+            # User Status Counts
+            status_counts = user_complaints.values('status').annotate(count=Count('id')).order_by('status')
+            status_order = {'Pending': 0, 'In Progress': 1, 'Resolved': 2}
+            status_counts_sorted = sorted(status_counts, key=lambda x: status_order.get(x['status'], 99))
+            user_status_chart_data = {
+                'labels': [item['status'] for item in status_counts_sorted],
+                'values': [item['count'] for item in status_counts_sorted]
+            }
+        context['user_type_chart_data_json'] = json.dumps(user_type_chart_data)
+        context['user_status_chart_data_json'] = json.dumps(user_status_chart_data)
+        # --- End User Doughnut Chart Data ---
+
+
+        # --- Data for Overall Statistics Charts ---
+        all_complaints_data = {} # For Grouped Bar & Heatmap
+        resolution_trend_data = {} # For Line Chart
+
+        if user.is_authenticated and not is_official: # Only calculate/show these for citizens
+            base_query = Complaint.objects.filter(
+                is_trashed=False,
+                is_permanently_deleted=False
+            )
+
+            # --- A. Data for Grouped Bar Chart & Heatmap (Complaints per Ward/Type) ---
+            ward_type_counts = base_query.filter(
+                ward_number__isnull=False # Exclude complaints without a ward for these stats
+            ).exclude(
+                ward_number__exact='' # Exclude empty ward numbers
+            ).values(
+                'ward_number', 'complaint_type'
+            ).annotate(
+                count=Count('id')
+            ).order_by('ward_number', 'complaint_type')
+
+            processed_data = {}
+            all_wards = set()
+            all_types = set(complaint_types_dict.keys()) # Use keys from dict
+
+            for item in ward_type_counts:
+                # Skip if ward_number is None or empty, though filter/exclude should handle this
+                ward = item['ward_number']
+                if not ward: continue
+
+                ctype = item['complaint_type']
+                count = item['count']
+
+                if ward not in processed_data:
+                    processed_data[ward] = {}
+                processed_data[ward][ctype] = count
+                all_wards.add(ward)
+
+            sorted_wards = sorted(list(all_wards))
+            sorted_types = sorted(list(all_types))
+            type_colors = {
+                'garbage': '#dc3545', 'pothole': '#ffc107', 'cattle': '#0dcaf0',
+            }
+
+            # Structure for Grouped Bar Chart
+            grouped_bar_datasets = []
+            for ctype_key in sorted_types:
+                grouped_bar_datasets.append({
+                    'label': complaint_types_dict.get(ctype_key, ctype_key.capitalize()),
+                    'data': [processed_data.get(ward, {}).get(ctype_key, 0) for ward in sorted_wards],
+                    'backgroundColor': type_colors.get(ctype_key, '#6c757d')
+                })
+
+            # Final data for grouped bar
+            all_complaints_data['ward_type_grouped_bar'] = {
+                'labels': sorted_wards,
+                'datasets': grouped_bar_datasets
+            }
+
+            # Final data for Heatmap
+            all_complaints_data['heatmap'] = {
+                'wards': sorted_wards,
+                'types': sorted_types,
+                'type_names': complaint_types_dict, # Pass display names dict
+                'data': processed_data
+            }
+
+            # --- B. Data for Line Chart (Resolution Trend - Created vs Resolved last 30 days) ---
+            today = date.today()
+            start_date = today - timedelta(days=29)
+            date_range = [start_date + timedelta(days=i) for i in range(30)]
+            date_labels = [d.strftime('%b %d') for d in date_range]
+
+            # Complaints Created per day
+            created_counts_qs = base_query.filter(
+                created_at__date__gte=start_date
+            ).annotate(
+                creation_date=TruncDate('created_at')
+            ).values('creation_date').annotate(
+                count=Count('id')
+            ).order_by('creation_date')
+            created_counts_dict = {item['creation_date']: item['count'] for item in created_counts_qs}
+
+            # Complaints Resolved per day
+            resolved_updates = ComplaintUpdate.objects.filter(
+                status='Resolved',
+                updated_at__date__gte=start_date,
+                complaint__in=base_query
+            ).values('complaint_id').annotate(
+                resolution_timestamp=Min('updated_at') # Use imported Min
+            ).annotate(
+                 resolution_date=TruncDate('resolution_timestamp')
+            )
+            resolved_counts_qs = resolved_updates.values('resolution_date').annotate(
+                 count=Count('complaint_id')
+             ).order_by('resolution_date')
+            resolved_counts_dict = {item['resolution_date']: item['count'] for item in resolved_counts_qs}
+
+            # Map counts to the date range
+            created_values = [created_counts_dict.get(d, 0) for d in date_range]
+            resolved_values = [resolved_counts_dict.get(d, 0) for d in date_range]
+
+            resolution_trend_data = {
+                'labels': date_labels,
+                'created_counts': created_values,
+                'resolved_counts': resolved_values
+            }
+
+        # Pass overall data to template
+        context['all_complaints_data_json'] = json.dumps(all_complaints_data)
+        context['resolution_trend_data_json'] = json.dumps(resolution_trend_data)
+        # --- End Overall Statistics ---
+
         return context
 
 

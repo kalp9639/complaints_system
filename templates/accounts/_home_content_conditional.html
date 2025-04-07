@@ -1,0 +1,22 @@
+{# templates/accounts/_home_content_conditional.html #}
+{% if not user.is_authenticated %}
+    <p class="lead">Report issues in your community to help make it a better place to live.</p>
+    <div class="mt-4">
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-lg me-2">Citizen Sign Up</a>
+        <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg me-2">Citizen Login</a>
+        <a href="{% url 'authorities:qr_verification' %}" class="btn btn-secondary btn-lg me-2">Authority Sign Up</a>
+        <a href="{% url 'authorities:official_login' %}" class="btn btn-outline-secondary btn-lg">Authority Login</a>
+    </div>
+{% elif is_official %}
+    <p class="lead">Manage and resolve complaints assigned to your ward.</p>
+    <div class="mt-4">
+        <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-primary btn-lg me-2">Go to Dashboard</a>
+        <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-primary btn-lg">View Assigned Complaints</a>
+    </div>
+{% else %}
+    <p class="lead">Hello, <strong>{{ user.first_name|default:user.username }}</strong>! View your complaint summary below or report a new issue.</p>
+    <div class="mt-4">
+        <a href="{% url 'submit_complaint' %}" class="btn btn-success btn-lg me-2">Submit a Complaint</a>
+        <a href="{% url 'view_complaints' %}" class="btn btn-info btn-lg text-white">View All Complaints</a>
+    </div>
+{% endif %}
