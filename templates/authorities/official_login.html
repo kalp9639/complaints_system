@@ -9,14 +9,6 @@
                     <h2>Government Official Login</h2>
                 </div>
                 <div class="card-body">
-                    {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                    {% endif %}
-
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
@@ -36,10 +28,6 @@
                         <p class="mb-0">Don't have an official account? <a href="{% url 'authorities:qr_verification' %}">Sign Up Here</a></p>
                     </div>
                 </div>
-                {# Optional: Add a card footer for separation #}
-                {# <div class="card-footer text-center"> #}
-                {#     <p class="mb-0">Go back to <a href="{% url 'home' %}">Homepage</a></p> #}
-                {# </div> #}
             </div>
         </div>
     </div>

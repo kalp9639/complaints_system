@@ -2,6 +2,7 @@
 
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login as auth_login 
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
@@ -588,24 +589,47 @@ class CustomLoginView(LoginView):
     def dispatch(self, request, *args, **kwargs):
         # If user is already authenticated, log them out first
         if request.user.is_authenticated:
+            # Check if they are an official trying to access citizen login
+            # Although the form_valid check below is primary, this adds a layer
+            # if they somehow got here while logged in.
+            # if hasattr(request.user, 'official_profile'):
+            #     messages.warning(request, 'Officials should use the official login page.')
+            #     # Optionally redirect them immediately
+            #     # return redirect('authorities:official_login') 
+            
+            # General logout if any authenticated user reaches login
             logout(request)
             messages.info(request, 'You have been logged out. Please login again.')
-            return redirect('login')
+            return redirect('login') # Redirect to citizen login
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # Call the parent class's form_valid method which will authenticate and login the user
-        response = super().form_valid(form)
+        # --- START: Added Check ---
+        # Get the user object based on the form validation
+        user = form.get_user()
 
-        # Explicitly manage session expiration
+        # Check if the authenticated user has an official profile
+        if hasattr(user, 'official_profile'):
+            # This user is an official, they should not use the citizen login
+            messages.error(
+                self.request, 
+                "Access Denied: Officials must use their portal "
+            )
+            # Prevent login by returning form_invalid, which re-renders the page
+            return self.form_invalid(form) 
+        # --- END: Added Check ---
+
+        # If the user is NOT an official, proceed with the standard login process
+        # Call the original LoginView's form_valid which handles the actual login
+        response = super().form_valid(form) 
+
+        # Explicitly manage session expiration (keep your existing logic)
         if self.request.POST.get('remember_me') == 'on':
-            # If "Remember me" is checked, use longer session
             self.request.session.set_expiry(settings.SESSION_COOKIE_AGE)
         else:
-            # If not checked, session expires when browser closes
             self.request.session.set_expiry(0)
 
-        return response
+        return response # Return the response from the parent class
 
 
 class LogoutView(View):
