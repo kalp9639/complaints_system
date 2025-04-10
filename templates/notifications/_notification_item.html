@@ -1,24 +1,52 @@
+{# --- START FILE templates/notifications/_notification_item.html --- #}
 {% load humanize %}
-{% load notification_tags %} {# Load the custom template tags #}
+{% load notification_tags %} {# Ensure tags are loaded #}
 
-<div class="list-group-item list-group-item-action {% if not notification.unread %} bg-light text-muted {% endif %} py-2 px-3 border-bottom">
-    <a href="{% url 'notification_redirect' notification.pk %}" class="text-decoration-none text-dark d-block">
-        {# --- START MODIFICATION --- #}
-        <div class="mb-1 small {% if notification.unread %}fw-bold{% endif %}">
-            {% if notification.action_object and notification.actor %}
-                {# Format for Status Updates (has action_object and actor) #}
-                <strong>Status update:</strong>
-                {# Use the template tag to display the status badge #}
-                {% status_badge notification.action_object.status %} –
-                {# Display who did the action and the simplified verb #}
-                {{ notification.actor.get_full_name|default:notification.actor.username }} {{ notification.verb }}
+{# Link wraps the whole item for clickability #}
+<a href="{% url 'notification_redirect' notification.pk %}" class="notification-item list-group-item list-group-item-action py-2 px-3 {% if not notification.unread %} bg-light text-muted {% endif %}">
+    <div class="d-flex w-100 align-items-center">
 
+        {# Unread Indicator Dot #}
+        <div class="flex-shrink-0 me-2">
+            {% if notification.unread %}
+                <span class="unread-indicator" title="Unread"></span>
             {% else %}
-                 {# Format for other notifications (e.g., Complaint Creation - no actor) #}
-                 {{ notification.verb }}
+                 <span class="read-indicator-placeholder"></span> {# Maintains spacing #}
             {% endif %}
         </div>
-         {# --- END MODIFICATION --- #}
-        <small class="text-muted">{{ notification.timestamp|naturaltime }}</small>
-    </a>
-</div>
+
+        {# Main Notification Content #}
+        <div class="flex-grow-1">
+            <div class="d-flex w-100 justify-content-between align-items-start">
+                {# Notification Text Section #}
+                <div class="mb-1 small {% if notification.unread %}fw-semibold{% else %}fw-normal{% endif %} me-2">
+                     {# Actor Icon/Info #}
+                     {% if notification.actor %}
+                        <i class="bi bi-person-check-fill small text-secondary me-1" title="Official Update"></i>
+                         <strong class="actor-name">{{ notification.actor.get_full_name|default:notification.actor.username }}</strong>
+                     {% else %}
+                         <i class="bi bi-info-circle-fill small text-primary me-1" title="System Notification"></i>
+                     {% endif %}
+
+                    {# Display verb from signal #}
+                    {{ notification.verb }}
+
+                    {# --- START MODIFICATION --- #}
+                    {# If it's an update (has action_object), display the new status #}
+                    {% if notification.action_object %}
+                         to {% status_badge notification.action_object.status %} {# Added space and the status badge #}
+                    {% endif %}
+                    {# --- END MODIFICATION --- #}
+
+                    {# Display target complaint ID if available #}
+                    {% if notification.target %}
+                        (<span class="text-muted">#{{ notification.target.id|stringformat:"04d" }}</span>)
+                    {% endif %}
+                </div>
+                {# Timestamp #}
+                <small class="text-muted text-nowrap flex-shrink-0">{{ notification.timestamp|naturaltime }}</small>
+            </div>
+        </div>
+    </div>
+</a>
+{# --- END FILE templates/notifications/_notification_item.html --- #}

@@ -1,19 +1,21 @@
 {# templates/accounts/_home_content_conditional.html #}
+{% load static %}
 {% if not user.is_authenticated %}
-    {# Only keep the introductory text #}
-    <p class="lead">Report issues in your community to help make it a better place to live.</p>
-    {# The div containing login/signup buttons has been REMOVED #}
+    {# Display login/signup for guests #}
+    <p class="lead mb-4">Report issues in your community to help make it a better place to live.</p>
+     <a href="{% url 'login' %}" class="btn btn-primary hero-btn px-4 py-2 me-2">Login</a>
+     <a href="{% url 'signup' %}" class="btn btn-outline-light hero-btn px-4 py-2">Sign Up</a>
 
 {% elif is_official %}
-    <p class="lead">Manage and resolve complaints assigned to your ward.</p>
+    <p class="lead mb-4">Manage and resolve complaints assigned to Ward {{ user.official_profile.ward_number }}.</p>
     <div class="mt-4">
-        <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-primary btn-lg me-2">Go to Dashboard</a>
-        <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-primary btn-lg">View Assigned Complaints</a>
+        <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-light hero-btn px-4 py-2 me-2">Go to Dashboard</a>
+        <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-light hero-btn px-4 py-2">View Assigned Complaints</a>
     </div>
 {% else %}
-    <p class="lead">Hello, <strong>{{ user.first_name|default:user.username }}</strong>! View your complaint summary below or report a new issue.</p>
+    <p class="lead mb-4">Hello, <strong>{{ user.first_name|default:user.username }}</strong>! View your complaint summary below or report a new issue.</p>
     <div class="mt-4">
-        <a href="{% url 'submit_complaint' %}" class="btn btn-success btn-lg me-2">Submit a Complaint</a>
-        <a href="{% url 'view_complaints' %}" class="btn btn-info btn-lg text-white">View All Complaints</a>
+        <a href="{% url 'submit_complaint' %}" class="btn btn-success hero-btn px-4 py-2 me-2">Submit a Complaint</a>
+        <a href="{% url 'view_complaints' %}" class="btn btn-info hero-btn px-4 py-2 text-white">View All Complaints</a>
     </div>
 {% endif %}

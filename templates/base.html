@@ -1,3 +1,4 @@
+{# --- START OF FILE templates/base.html --- #}
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 <head>
@@ -6,261 +7,221 @@
     <title>{% block title %}Civic Complaints System{% endblock %}</title>
 
     {# Bootstrap CSS #}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
     {% load static %}
+    {# Main Custom Stylesheet #}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {# Validation Stylesheet #}
     <link rel="stylesheet" href="{% static 'css/validation.css' %}">
+    {# Message Stylesheet #}
     <link rel="stylesheet" href="{% static 'css/messages.css' %}">
 
     {# Bootstrap Icons #}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 
-    {# Font Awesome (Optional - if used elsewhere) #}
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    {# Font Awesome #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    {# Custom CSS Block #}
+    {# Block for page-specific extra CSS #}
     {% block extra_css %}{% endblock %}
 
-    <style>
-        html, body {
-            height: 100%;
-        }
-
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: #f8f9fa;
-            margin: 0;
-        }
-
-        main.content-wrapper {
-            flex: 1 0 auto;
-            padding-top: 70px; /* Increased slightly for fixed navbar */
-            padding-bottom: 60px; /* Reduced slightly */
-        }
-
-        .navbar {
-            /* Removed margin-bottom as it's fixed-top */
-            box-shadow: 0 2px 4px rgba(0,0,0,.1); /* Optional: Add shadow to fixed navbar */
-        }
-
-        .card {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header {
-            font-weight: bold;
-        }
-
-        .site-footer {
-            flex-shrink: 0;
-            background-color: #212529; /* Same as Bootstrap's bg-dark */
-            color: white;
-            margin-top: auto; /* Push footer to bottom */
-        }
-
-        /* Ensure offcanvas body allows scrolling if content exceeds height */
-        .offcanvas-body {
-            overflow-y: auto;
-        }
-        /* Bell Icon Styling */
-        .navbar .bi-bell-fill {
-            font-size: 1.1rem; /* Similar to other navbar icons */
-            color: #ffffff;
-            vertical-align: middle;
-            transition: color 0.2s ease, transform 0.2s ease;
-        }
-
-        .navbar .btn-secondary {
-            padding: 6px 8px;
-            background-color: transparent;
-            border: none;
-        }
-
-        .navbar .btn-secondary:hover .bi-bell-fill {
-            color: #ffc107;
-            transform: scale(1.1);
-        }
-
-        /* Badge Positioning - Clean */
-        .navbar .badge {
-            font-size: 0.6rem;
-            padding: 3px 5px;
-        }
-
-        .navbar .btn-secondary .badge {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            font-size: 0.65rem;
-            padding: 3px 5px;
-            transform: none;
-        }
-
-    </style>
 </head>
 
 <body class="d-flex flex-column">
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        {# Navbar - Using style.css variables and structure #}
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
             <div class="container">
-                <a class="navbar-brand" href="{% url 'home' %}">Civic Complaints</a>
+                <a class="navbar-brand" href="{% url 'home' %}">
+                     <i class="fas fa-bullhorn me-2"></i>Civic Complaints
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto align-items-center"> {# <<< START OF UPDATED BLOCK >>> #}
+                    <ul class="navbar-nav ms-auto align-items-center">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">
+                               <i class="fas fa-home fa-fw me-1"></i>Home
+                           </a>
                         </li>
 
                         {% if user.is_authenticated %}
                             {# --- Logged-in User Links --- #}
-
                             {% if is_official %}
-                                <!-- Government Officials' Navbar -->
+                                <!-- Government Official Navbar -->
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and request.resolver_match.url_name == 'authority_dashboard' %}active{% endif %}" href="{% url 'authorities:authority_dashboard' %}">Dashboard</a>
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and request.resolver_match.url_name == 'authority_dashboard' %}active{% endif %}" href="{% url 'authorities:authority_dashboard' %}">
+                                       <i class="fas fa-tachometer-alt fa-fw me-1"></i>Dashboard
+                                   </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_list' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_list' %}">Complaints List</a>
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_list' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_list' %}">
+                                       <i class="fas fa-list fa-fw me-1"></i>Complaints List
+                                   </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_map' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_map' %}">Complaints Map</a>
+                                    <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'complaints_map' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:authority_complaints_map' %}">
+                                        <i class="fas fa-map-marked-alt fa-fw me-1"></i>Complaints Map
+                                   </a>
                                 </li>
-                                 <li class="nav-item dropdown"> {# Added Dropdown for Profile/Logout #}
+                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownOfficial" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-user-shield me-1"></i> {{ user.username }}
+                                        <i class="fas fa-user-shield fa-fw me-1"></i> {{ user.username }}
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownOfficial">
-                                        <li><a class="dropdown-item" href="{% url 'authorities:edit_profile' %}">Edit Profile</a></li>
+                                        <li><a class="dropdown-item" href="{% url 'authorities:edit_profile' %}"><i class="fas fa-user-edit fa-fw me-2"></i>Edit Profile</a></li>
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">Logout</a></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'authorities:official_logout' %}" onclick="return confirm('Are you sure you want to logout?');"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
                                     </ul>
                                 </li>
 
                             {% else %}
-                                <!-- Normal Users' Navbar -->
+                                <!-- Normal Citizen Navbar -->
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">Profile</a>
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}" href="{% url 'profile' %}">
+                                        <i class="fas fa-user-circle fa-fw me-1"></i>Profile
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.url_name == 'submit_complaint' %}active{% endif %}" href="{% url 'submit_complaint' %}">Submit Complaint</a>
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'submit_complaint' %}active{% endif %}" href="{% url 'submit_complaint' %}">
+                                        <i class="fas fa-plus-circle fa-fw me-1"></i>Submit
+                                    </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link {% if request.resolver_match.url_name == 'view_complaints' %}active{% endif %}" href="{% url 'view_complaints' %}">View Complaints</a>
+                                    <a class="nav-link {% if request.resolver_match.url_name == 'view_complaints' %}active{% endif %}" href="{% url 'view_complaints' %}">
+                                        <i class="fas fa-list-alt fa-fw me-1"></i>View Complaints
+                                    </a>
                                 </li>
-                                 {# --- Notification Trigger Button (Only for Non-Officials) --- #}
-                                <li class="nav-item ms-1">
-                                    <button class="btn btn-secondary position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#notificationSlider" aria-controls="notificationSlider">
+                                 {# --- Notification Trigger Button --- #}
+                                <li class="nav-item ms-lg-2"> {# Margin on larger screens #}
+                                    <button class="btn btn-notification position-relative" type="button" data-bs-toggle="offcanvas" data-bs-target="#notificationSlider" aria-controls="notificationSlider" title="Notifications">
                                         <i class="bi bi-bell-fill"></i>
                                         {% if unread_notification_count > 0 %}
                                         <span class="badge rounded-pill bg-danger">
                                             {{ unread_notification_count }}
+                                            <span class="visually-hidden">unread notifications</span>
                                         </span>
                                         {% endif %}
                                     </button>
                                 </li>
                                 {# --- End Notification Trigger Button --- #}
-                                <li class="nav-item ms-1"> {# Common Logout for Citizen #}
-                                    <a class="nav-link" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
+                                <li class="nav-item dropdown ms-lg-1"> {# Dropdown for Logout #}
+                                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-user fa-fw me-1"></i>{{ user.username }}
+                                    </a>
+                                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdownUser">
+                                         <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user-circle fa-fw me-2"></i>My Profile</a></li>
+                                         <li><a class="dropdown-item" href="{% url 'edit_profile' %}"><i class="fas fa-user-edit fa-fw me-2"></i>Edit Profile</a></li>
+                                         <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}" onclick="return confirm('Are you sure you want to logout?');"><i class="fas fa-sign-out-alt fa-fw me-2"></i>Logout</a></li>
+                                    </ul>
                                 </li>
                             {% endif %}
 
                         {% else %}
                             {# --- Guest Links --- #}
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">
+                                    <i class="fas fa-sign-in-alt fa-fw me-1"></i>Login
+                                </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link {% if request.resolver_match.url_name == 'signup' %}active{% endif %}" href="{% url 'signup' %}">Sign Up</a>
+                                <a class="nav-link {% if request.resolver_match.url_name == 'signup' %}active{% endif %}" href="{% url 'signup' %}">
+                                    <i class="fas fa-user-plus fa-fw me-1"></i>Sign Up
+                                </a>
                             </li>
-                            <li class="nav-item"> {# New Officials Link #}
+                            <li class="nav-item ms-lg-2"> {# Spacing for official link #}
                                 <a class="nav-link {% if request.resolver_match.app_name == 'authorities' and 'login' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authorities:official_login' %}">
-                                    <i class="fas fa-user-shield me-1"></i> Officials {# Added icon #}
+                                    <i class="fas fa-user-shield fa-fw me-1"></i> Officials Portal
                                 </a>
                             </li>
                         {% endif %}
-                    </ul> {# <<< END OF UPDATED BLOCK >>> #}
+                    </ul>
                 </div>
             </div>
         </nav>
     </header>
 
-    <main class="content-wrapper container mt-4">
-        {# Display Django messages framework messages #}
-        {% if messages %}
-            <div class="messages-container">
-                {% for message in messages %}
-                    <div class="alert alert-dismissible fade show {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+    <main class="content-wrapper"> {# Removed container class, applied in content blocks #}
+        {# Messages are now inside content wrapper but outside potential inner containers #}
+        <div class="container"> {# Wrap messages in a container for consistent width #}
+            {% if messages %}
+                <div class="messages-container" style="position: relative; top: 0; z-index: 1030;"> {# Adjusted style for non-sticky #}
+                    {% for message in messages %}
+                        <div class="alert alert-dismissible fade show {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
 
         {# Main content block for child templates #}
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="site-footer py-4 bg-dark text-white mt-auto"> {# Added text-white and mt-auto #}
+    {# Footer - Using style.css variables #}
+    <footer class="site-footer py-4 mt-auto">
         <div class="container">
             <div class="row">
                 <div class="col-md-4 mb-3 mb-md-0">
-                    <h5>Civic Complaints</h5>
-                    <p class="small">Making our communities better together</p> {# Made text smaller #}
+                    <h5><i class="fas fa-bullhorn me-2"></i>Civic Complaints</h5>
+                    <p class="small">Making our communities better, together.</p>
                 </div>
                 <div class="col-md-4 mb-3 mb-md-0">
                     <h5>Contact</h5>
-                    <ul class="list-unstyled small"> {# Made text smaller #}
-                        <li><i class="fas fa-user me-2"></i> Kalp Patel</li>
-                        <li><i class="fas fa-phone me-2"></i> +91 8238804881</li>
-                        {# Consider adding email #}
-                        <li><i class="fas fa-envelope me-2"></i> <a href="mailto:kalp9639@gmail.com" class="text-white text-decoration-none">kalp9639@gmail.com</a></li>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-user fa-fw me-2"></i> Kalp Patel</li>
+                        <li><i class="fas fa-phone fa-fw me-2"></i> +91 8238804881</li>
+                        <li><i class="fas fa-envelope fa-fw me-2"></i> <a href="mailto:kalp9639@gmail.com" class="text-white text-decoration-none">kalp9639@gmail.com</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h5>Social Media</h5>
+                    <h5>Connect</h5>
                     <div class="d-flex gap-3">
-                        <a href="https://www.instagram.com/kkaallpp_/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
-                        <a href="https://www.linkedin.com/in/kalp-patel-301234211/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
-                        {# Add Github or other relevant links? #}
-                        {# <a href="#" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fab fa-github fa-lg"></i></a> #}
+                        <a href="https://www.instagram.com/kkaallpp_/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram"><i class="fab fa-instagram fa-lg"></i></a>
+                        <a href="https://www.linkedin.com/in/kalp-patel-301234211/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" title="LinkedIn"><i class="fab fa-linkedin fa-lg"></i></a>
+                         {# Example GitHub Link #}
+                         <a href="https://github.com/KalpP/" class="text-white" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub"><i class="fab fa-github fa-lg"></i></a>
                     </div>
                 </div>
             </div>
             <hr class="my-3">
-            <div class="text-center small"> {# Made text smaller #}
+            <div class="text-center small">
                 <p class="mb-0">© {% now "Y" %} Civic Complaints System. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
-    {# --- Include Notification Slider Template (only for logged-in users) --- #}
-    {% if user.is_authenticated %}
+    {# --- Include Notification Slider Template (only for logged-in citizens) --- #}
+    {% if user.is_authenticated and not is_official %}
         {% include "notifications/_notification_slider.html" %}
     {% endif %}
     {# --- End Notification Slider Include --- #}
 
     {# Bootstrap JS Bundle (includes Popper) #}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
 
     {# Custom JS Block #}
-    {% block extra_js %}
-    <script src="{% static 'js/form-validation.js' %}"></script>
-    {% endblock %}
+    {% block extra_js %}{% endblock %}
 
     {# Auto-dismiss alerts after 5 seconds #}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-dismiss alerts after 5 seconds
+            const autoDismissDelay = 7000; // 7 seconds
             setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(alert => {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+                document.querySelectorAll('.messages-container .alert').forEach(alert => {
+                    // Check if the alert still exists before trying to dismiss
+                    if (alert) {
+                         const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                         if (bsAlert) {
+                             bsAlert.close();
+                         }
+                    }
                 });
-            }, 10000);
+            }, autoDismissDelay);
         });
     </script>
 </body>

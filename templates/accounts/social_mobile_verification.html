@@ -1,40 +1,60 @@
+{# --- START OF FILE templates/accounts/social_mobile_verification.html --- #}
 <!-- accounts/templates/accounts/social_mobile_verification.html -->
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mobile Verification - Civic Complaints System{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Mobile Verification Required</h2>
+        <div class="col-md-7 col-lg-6"> {# Adjusted width #}
+            <div class="card shadow-sm border-0 rounded-3"> {# Card styling #}
+                <div class="card-header bg-gradient bg-primary text-white text-center py-3"> {# Header styling #}
+                     <h2 class="mb-0 h4"><i class="fas fa-mobile-screen-button me-2"></i>Mobile Verification Required</h2>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4"> {# Increased padding #}
 
                     {% if is_new %}
-                        <p>Welcome! To complete your registration with {{ name }}, please verify your mobile number.</p>
+                        <p class="text-center mb-2">Welcome, <strong>{{ name|default:'User' }}</strong>!</p>
+                        <p class="text-muted text-center mb-4 small">To complete your registration via Google, please enter and verify your mobile number.</p>
                     {% else %}
-                        <p>Welcome back! Please verify your mobile number to continue.</p>
+                        <p class="text-center mb-2">Welcome back, <strong>{{ name|default:'User' }}</strong>!</p>
+                        <p class="text-muted text-center mb-4 small">Please enter your mobile number to send a verification code and link your Google account.</p>
                     {% endif %}
-                    
-                    <form method="post">
+
+                    <form method="post" novalidate>
                         {% csrf_token %}
-                        
-                        <div class="form-group">
-                            <label for="{{ form.mobile_number.id_for_label }}">Mobile Number</label>
-                            {{ form.mobile_number }}
-                            <small id="mobileHelp" class="form-text text-muted">We'll send a verification code to this number.</small>
+
+                        <div class="mb-4 form-group"> {# Margin bottom #}
+                            <label for="{{ form.mobile_number.id_for_label }}" class="form-label small fw-bold text-secondary">Mobile Number</label>
+                             <div class="input-group"> {# Input group for country code #}
+                                <span class="input-group-text">+{{ settings.DEFAULT_COUNTRY_CODE }}</span>
+                                <input type="tel"
+                                       name="{{ form.mobile_number.html_name }}"
+                                       id="{{ form.mobile_number.id_for_label }}"
+                                       class="form-control {% if form.mobile_number.errors %}is-invalid{% endif %}"
+                                       placeholder="Enter your 10-digit mobile number"
+                                       value="{{ form.mobile_number.value|default:'' }}"
+                                       required
+                                       pattern="\d{10}"
+                                       title="Please enter a 10-digit mobile number">
+                             </div>
+                            <small id="mobileHelp" class="form-text text-muted mt-1">We'll send a 6-digit verification code (OTP) to this number.</small>
                             {% if form.mobile_number.errors %}
-                                <div class="text-danger">
-                                    {{ form.mobile_number.errors }}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.mobile_number.errors|first }}
                                 </div>
                             {% endif %}
                         </div>
-                        
-                        <div class="form-group mt-3">
-                            <button type="submit" class="btn btn-primary">Send Verification Code</button>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Send Verification Code</button>
                         </div>
                     </form>
+                </div>
+                 <div class="card-footer text-center bg-light py-3 border-0"> {# Styled footer #}
+                    <a href="{% url 'login' %}" class="text-decoration-none small">Cancel and return to Login</a>
                 </div>
             </div>
         </div>

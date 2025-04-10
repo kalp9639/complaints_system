@@ -1,52 +1,103 @@
-<!-- templates/signup.html -->
+{# --- START OF FILE templates/accounts/signup.html --- #}
+<!-- templates/accounts/signup.html -->
 {% extends 'base.html' %}
-{% load socialaccount %} 
+{% load socialaccount %}
 {% load static %}
-{% block title %}Sign Up - Civic Complaints System{% endblock %}
+
+{% block title %}Citizen Sign Up - Civic Complaints System{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/validation.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Citizen Sign Up</h2>
-            </div>
-            <div class="card-body">
-                <form method="post" novalidate id="signup-form">
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <small class="form-text text-muted">{{ field.help_text }}</small>
-                            {% endif %}
-                            {% for error in field.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6"> {# Adjusted width #}
+            <div class="card shadow-sm border-0 rounded-3"> {# Card styling #}
+                <div class="card-header bg-gradient bg-primary text-white text-center py-3"> {# Header styling #}
+                    <h2 class="mb-0 h4"><i class="fas fa-user-plus me-2"></i>Citizen Sign Up</h2>
+                </div>
+                <div class="card-body p-4"> {# Increased padding #}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}<br>
                             {% endfor %}
                         </div>
-                    {% endfor %}
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Sign Up</button>
-                    </div>
+                    {% endif %}
 
-                    <div class="position-relative my-4">
-                        <hr>
-                        <div class="position-absolute top-50 start-50 translate-middle bg-white px-3">
-                            <span class="text-muted">or</span>
+                    <form method="post" novalidate id="signup-form">
+                        {% csrf_token %}
+
+                        <div class="row g-3 mb-2"> {# Row for name fields #}
+                            <div class="col-md-6 form-group">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.first_name.label }}</label>
+                                <input type="text" name="{{ form.first_name.html_name }}" id="{{ form.first_name.id_for_label }}" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" value="{{ form.first_name.value|default:'' }}" required>
+                                {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.last_name.label }}</label>
+                                <input type="text" name="{{ form.last_name.html_name }}" id="{{ form.last_name.id_for_label }}" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" value="{{ form.last_name.value|default:'' }}" required>
+                                {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors|first }}</div>{% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-center">
-                        <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger">
-                            <i class="fab fa-google me-2"></i>Sign Up with Google
-                        </a>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center">
-                <p class="mb-0">Already have an account? <a href="{% url 'login' %}">Login</a></p>
+
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.username.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.username.label }}</label>
+                            <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" class="form-control {% if form.username.errors %}is-invalid{% endif %}" value="{{ form.username.value|default:'' }}" required>
+                             {% if form.username.help_text %}<small class="form-text text-muted">{{ form.username.help_text }}</small>{% endif %}
+                             {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.email.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.email.label }}</label>
+                            <input type="email" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}" class="form-control {% if form.email.errors %}is-invalid{% endif %}" value="{{ form.email.value|default:'' }}" required>
+                            {% if form.email.help_text %}<small class="form-text text-muted">{{ form.email.help_text }}</small>{% endif %}
+                            {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors|first }}</div>{% endif %}
+                        </div>
+
+                         <div class="mb-3 form-group">
+                            <label for="{{ form.mobile_number.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.mobile_number.label }}</label>
+                            <div class="input-group"> {# Input group for country code #}
+                                <span class="input-group-text">+{{ settings.DEFAULT_COUNTRY_CODE }}</span>
+                                <input type="tel" name="{{ form.mobile_number.html_name }}" id="{{ form.mobile_number.id_for_label }}" class="form-control {% if form.mobile_number.errors %}is-invalid{% endif %}" value="{{ form.mobile_number.value|default:'' }}" required pattern="\d{10}" title="Enter 10 digits">
+                            </div>
+                             {% if form.mobile_number.help_text %}<small class="form-text text-muted">{{ form.mobile_number.help_text }}</small>{% endif %}
+                             {% if form.mobile_number.errors %}<div class="invalid-feedback d-block">{{ form.mobile_number.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.password1.label }}</label>
+                            <input type="password" name="{{ form.password1.html_name }}" id="{{ form.password1.id_for_label }}" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                            {% if form.password1.help_text %}<small class="form-text text-muted">{{ form.password1.help_text }}</small>{% endif %}
+                            {% if form.password1.errors %}<div class="invalid-feedback">{{ form.password1.errors|first }}</div>{% endif %}
+                             {# JS will insert strength meter/requirements here #}
+                        </div>
+
+                        <div class="mb-4 form-group"> {# Increased margin #}
+                            <label for="{{ form.password2.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.password2.label }}</label>
+                            <input type="password" name="{{ form.password2.html_name }}" id="{{ form.password2.id_for_label }}" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                            {% if form.password2.help_text %}<small class="form-text text-muted">{{ form.password2.help_text }}</small>{% endif %}
+                            {% if form.password2.errors %}<div class="invalid-feedback">{{ form.password2.errors|first }}</div>{% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+                        </div>
+
+                        <div class="text-center text-muted my-3 small">Or sign up with</div>
+
+                         <div class="d-grid">
+                            <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger">
+                                <i class="fab fa-google me-2"></i>Sign Up with Google
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center bg-light py-3 border-0"> {# Styled footer #}
+                    <p class="mb-0 small">Already have an account? <a href="{% url 'login' %}" class="text-decoration-none fw-bold">Login</a></p>
+                </div>
             </div>
         </div>
     </div>
@@ -54,17 +105,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-    // Add Bootstrap form classes to Django form fields
-    document.addEventListener('DOMContentLoaded', function() {
-        const formInputs = document.querySelectorAll('input, select, textarea');
-        formInputs.forEach(input => {
-            input.classList.add('form-control');
-            if (input.classList.contains('is-invalid')) {
-                input.classList.add('is-invalid');
-            }
-        });
-    });
-</script>
+{# Load validation JS #}
 <script src="{% static 'js/form-validation.js' %}"></script>
+{# Script to add form-control class is removed as it's handled in the template/JS #}
 {% endblock %}

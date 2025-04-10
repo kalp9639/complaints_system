@@ -1,94 +1,150 @@
-{# templates/notifications/all_notifications.html #}
-
+{# --- START FILE templates/notifications/all_notifications.html --- #}
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
+{% load notification_tags %}
 
 {% block title %}All Notifications - Civic Complaints System{% endblock %}
+
+{% block extra_css %}
+    {# Ensure Bootstrap Icons are loaded (likely in base.html) #}
+    <style>
+        /* Styles from previous step for modern look */
+        .notification-list .list-group-item {
+            transition: background-color 0.2s ease;
+            border: 0;
+            border-bottom: 1px solid var(--bs-list-group-border-color, #dee2e6);
+        }
+        .notification-list .list-group-item:last-child { border-bottom: 0; }
+        .notification-list .list-group-item:hover { background-color: var(--bs-tertiary-bg, #f8f9fa); }
+        .unread-indicator {
+            display: inline-block; width: 9px; height: 9px;
+            background-color: var(--bs-primary);
+            border-radius: 50%; vertical-align: middle;
+        }
+        .read-indicator-placeholder { display: inline-block; width: 9px; height: 9px; visibility: hidden; }
+        .notification-list .list-group-item.bg-light { /* Read items styling */ }
+        .notification-list .list-group-item.text-muted { color: var(--bs-secondary-color) !important; }
+        .notification-list .list-group-item.bg-light .actor-name { font-weight: var(--bs-body-font-weight); } /* Normal weight actor */
+        .notification-list .list-group-item:not(.bg-light) .fw-semibold { font-weight: 600 !important; } /* Ensure unread is bold */
+        .messages-container .alert { margin-bottom: 1rem; }
+        .pagination .page-link { font-size: 0.875rem; }
+        .pagination .page-item.active .page-link { background-color: var(--bs-primary); border-color: var(--bs-primary); }
+
+        /* Style for the go back button area */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem; /* Was mb-4 */
+            flex-wrap: wrap; /* Allow wrapping on small screens */
+            gap: 0.5rem; /* Add gap between elements */
+        }
+         .page-header .title-container {
+             display: flex;
+             align-items: center;
+             gap: 0.75rem; /* Space between back button and title */
+             flex-grow: 1; /* Allow title area to grow */
+         }
+         .page-header .actions-container {
+             flex-shrink: 0; /* Prevent actions container from shrinking */
+         }
+          /* Adjust button size */
+         .btn-back {
+             padding: 0.25rem 0.5rem;
+             font-size: 0.875rem;
+             line-height: 1.5;
+         }
+
+    </style>
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
-        <div class="col-md-9">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="d-flex align-items-center">
-                    <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary me-3">
-                        <i class="bi bi-arrow-left"></i>
-                    </a>
-                    <h1 class="mb-0">All Notifications</h1>
-                </div>
-                {# Use context variable for unread count check #}
-                {% if unread_notification_count > 0 %}
-                  <form action="{% url 'mark_all_notifications_read' %}" method="post">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-sm btn-outline-secondary">Mark all as read</button>
-                  </form>
-                {% endif %}
-            </div>
+        <div class="col-md-10 col-lg-9">
 
-            <div class="card">
-                <div class="list-group list-group-flush">
-                    {# Rest of the template remains the same #}
-                    {% if page_obj %}
-                        {# Loop through notifications on the current page #}
+            {# --- UPDATED HEADER SECTION --- #}
+            <div class="page-header">
+                <div class="title-container">
+                    {# NEW: Go Back Button #}
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-back" onclick="window.history.back();" title="Go Back">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    {# Page Title #}
+                    <h1 class="h3 mb-0"><i class="bi bi-inbox-fill me-1"></i>All Notifications</h1>
+                </div>
+                <div class="actions-container">
+                    {# Mark All Read Button #}
+                    {% if unread_notification_count > 0 %}
+                      <form action="{% url 'mark_all_notifications_read' %}" method="post" class="d-inline"> {# Use d-inline if needed #}
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2">Mark all as read</button>
+                      </form>
+                    {% endif %}
+                </div>
+            </div>
+            {# --- END UPDATED HEADER SECTION --- #}
+
+            <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+                 <div class="card-header bg-light py-2 px-3 border-0">
+                    <small class="text-muted">Your notification history</small>
+                </div>
+                <div class="list-group list-group-flush notification-list">
+                    {% if page_obj.object_list %}
                         {% for notification in page_obj %}
                             {% include "notifications/_notification_item.html" with notification=notification %}
                         {% endfor %}
                     {% else %}
                         <div class="list-group-item text-center text-muted p-5">
+                             <i class="bi bi-bell-slash fs-1 mb-3"></i><br>
                             You have no notifications yet.
                         </div>
                     {% endif %}
                 </div>
+
+                 {# --- PAGINATION CONTROLS --- #}
+                 {% if is_paginated and page_obj.paginator.num_pages > 1 %}
+                    <div class="card-footer bg-white py-2 border-0">
+                        <nav aria-label="Notification page navigation">
+                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                {# Previous Page Link #}
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">«</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">«</span></li>
+                                {% endif %}
+
+                                {# Page Number Links - Using the custom tag #}
+                                {% get_pagination_range page_obj as page_range %}
+                                {% for page_num in page_range %}
+                                    {% if page_num == page_obj.number %}
+                                        <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+                                    {% elif page_num == '...' %}
+                                         <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    {% else %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {# Next Page Link #}
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">»</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item disabled"><span class="page-link">»</span></li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                 {% endif %}
+                 {# --- END PAGINATION CONTROLS --- #}
             </div>
-
-            {# --- START PAGINATION CONTROLS --- #}
-            {% if is_paginated and page_obj.paginator.num_pages > 1 %}
-            <nav aria-label="Page navigation" class="mt-4">
-                <ul class="pagination justify-content-center">
-                    {# Previous Page Link #}
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
-                                <span aria-hidden="true">«</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">«</span>
-                        </li>
-                    {% endif %}
-
-                    {# Page Number Links #}
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                            <li class="page-item active" aria-current="page"><span class="page-link">{{ num }}</span></li>
-                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                            {# Show links for pages near the current one #}
-                            <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                        {% elif num == page_obj.number|add:'-3' or num == page_obj.number|add:'3' %}
-                            {# Show ellipsis for gaps #}
-                            <li class="page-item disabled"><span class="page-link">...</span></li>
-                        {% endif %}
-                    {% endfor %}
-
-                    {# Next Page Link #}
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
-                                <span aria-hidden="true">»</span>
-                            </a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">»</span>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-            {# --- END PAGINATION CONTROLS --- #}
-
         </div>
     </div>
 </div>
 {% endblock %}
+{# --- END FILE templates/notifications/all_notifications.html --- #}

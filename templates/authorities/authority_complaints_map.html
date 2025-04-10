@@ -1,290 +1,338 @@
+{# --- START OF FILE templates/authorities/authority_complaints_map.html --- #}
 {% extends 'base.html' %}
-{% block title %}Ward {{ user.official_profile.ward_number }} Complaints Map{% endblock %}
+{% load static %}
+
+{% block title %}Complaints Map - Ward {{ user.official_profile.ward_number }}{% endblock %}
 
 {% block extra_css %}
 <!-- Include Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""/>
+<link rel="stylesheet" href="{% static 'css/style.css' %}"> {# Ensure shared styles are loaded #}
 <style>
     #map {
-        height: 600px;
+        height: 60vh; /* Relative height */
+        min-height: 500px; /* Minimum height */
         width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        border: 1px solid #dee2e6;
     }
     .complaint-info {
-        max-width: 300px;
+        max-width: 280px; /* Slightly narrower */
+        font-size: 0.9rem;
     }
-    .filter-controls {
-        margin-bottom: 20px;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
+    .complaint-info h5 {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+        color: var(--primary-color);
+    }
+    .complaint-info p {
+        margin-bottom: 0.4rem;
+    }
+     .complaint-info .badge { /* PRESERVED STATUS COLORS */
+        font-size: 0.8rem;
+     }
+     .badge.bg-danger { background-color: #dc3545 !important; }
+     .badge.bg-primary { background-color: #3e6b94 !important; }
+     .badge.bg-success { background-color: #198754 !important; }
+
+     .complaint-info img {
+         max-height: 120px;
+         object-fit: cover;
+         margin-bottom: 0.5rem;
+     }
+     .complaint-info .btn-sm {
+         padding: 0.25rem 0.6rem;
+         font-size: 0.8rem;
+     }
+     /* Legend Styling */
+    .legend {
+        padding: 6px 8px;
+        font: 12px Arial, Helvetica, sans-serif;
+        background: rgba(255, 255, 255, 0.8);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        border-radius: 5px;
+        line-height: 18px;
+        color: #555;
+    }
+    .legend i {
+        width: 18px;
+        height: 18px;
+        float: left;
+        margin-right: 8px;
+        opacity: 0.9;
+        border-radius: 3px; /* Make icons slightly rounded */
     }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<div class="container mt-10">
+<div class="container mt-4"> {# Reduced top margin #}
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Complaints Map - Ward {{ user.official_profile.ward_number }}</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap"> {# Added flex-wrap #}
+        <h1 class="h3 mb-2 mb-md-0">Complaints Map - Ward {{ user.official_profile.ward_number }}</h1>
         <div class="d-flex gap-2">
-            <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-secondary me-2">List View</a>
-            <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-primary">Dashboard</a>
+            <a href="{% url 'authorities:authority_complaints_list' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-list me-1"></i>List View</a>
+            <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-primary btn-sm"><i class="fas fa-tachometer-alt me-1"></i>Dashboard</a>
         </div>
     </div>
-    
-    <!-- Filter controls -->
-    <div class="card mb-3">
+
+    <!-- Filter Card -->
+    <div class="card mb-4 shadow-sm border-0">
         <div class="card-body p-3">
-            <form id="filter-form" method="get" class="row g-2">
-                <div class="col-md-4">
-                    <select id="type-filter" name="type" class="form-select">
+            <form id="filter-form" method="get" class="row g-2 align-items-center">
+                 <div class="col-md-3">
+                     <label for="type-filter" class="visually-hidden">Type</label>
+                    <select id="type-filter" name="type" class="form-select form-select-sm">
                         <option value="">All Types</option>
-                        <!-- Will be populated dynamically with JS -->
+                        {# Options populated by JS #}
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <select id="status-filter" name="status" class="form-select">
+                 <div class="col-md-3">
+                    <label for="status-filter" class="visually-hidden">Status</label>
+                    <select id="status-filter" name="status" class="form-select form-select-sm">
                         <option value="">All Statuses</option>
                         <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
                         <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
                         <option value="Resolved" {% if selected_status == 'Resolved' %}selected{% endif %}>Resolved</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select id="sort-filter" name="sort" class="form-select">
+                 <div class="col-md-3">
+                     <label for="sort-filter" class="visually-hidden">Sort By</label>
+                    <select id="sort-filter" name="sort" class="form-select form-select-sm">
                         <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest First</option>
                         <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
                     </select>
                 </div>
-                <div class="col-md-1 d-flex">
-                    <a href="{% url 'authorities:authority_complaints_map' %}" class="btn btn-secondary flex-grow-1">Reset</a>
+                <div class="col-md-3 d-grid">
+                    <a href="{% url 'authorities:authority_complaints_map' %}" class="btn btn-secondary btn-sm">Reset Filters</a>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <!-- Map statistics -->
-    <div class="alert alert-info mb-3">
-        <strong>Total Complaints in Ward {{ user.official_profile.ward_number }}:</strong> 
-        <span id="visible-count">{{ complaint_count }}</span> of {{ complaint_count }}
+    <div class="alert alert-light border mb-4 py-2 px-3 d-flex justify-content-between align-items-center">
+        <small><i class="fas fa-map-marker-alt me-1 text-primary"></i> Showing <strong id="visible-count">{{ complaint_count }}</strong> complaints on map.</small>
+        <small id="map-status" class="text-muted"></small>
     </div>
-    
+
     <!-- Map container -->
-    <div id="map"></div>
+    <div id="map">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading map...</span>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <!-- Include Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
 <script>
     // Complaint data from the server
     const complaintsData = {{ complaints_data|safe }};
 
-    // Initialize the map (centered on the first complaint or a default location)
-    const map = L.map('map').setView(
-        complaintsData.length > 0 
-            ? [complaintsData[0].lat, complaintsData[0].lng] 
-            : [20.5937, 78.9629], 
-        complaintsData.length > 0 ? 13 : 5
-    );
-
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Map for storing markers by complaint ID
-    const markers = {};
-
-    // Map for storing unique types for filters
+    let map;
+    let markers = {}; // Use let for reassignment
     const complaintTypes = new Set();
 
-    // Icons for different statuses
+    // Icons for different statuses (ensure full URLs)
     const icons = {
         'Pending': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         }),
         'In Progress': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         }),
         'Resolved': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        }),
+        'Default': L.icon({ // Fallback icon
+             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         })
     };
+    const iconColors = { // For legend
+        'Pending': '#d32f2f', // Red
+        'In Progress': '#1976d2', // Blue
+        'Resolved': '#388e3c'  // Green
+    };
 
-    // Function to add markers
-    function addMarkersToMap() {
-        // Clear existing markers
-        for (let id in markers) {
-            map.removeLayer(markers[id]);
+    // Function to initialize or update the map
+    function initializeMap() {
+        const mapStatus = document.getElementById('map-status');
+        mapStatus.textContent = 'Loading map...';
+
+        if (!map) {
+            // Calculate initial center and zoom
+            let initialCenter = [22.3072, 73.1812]; // Default (e.g., Vadodara)
+            let initialZoom = 12;
+            if (complaintsData.length > 0) {
+                 // Basic averaging for center - consider more robust methods for large areas
+                let avgLat = complaintsData.reduce((sum, c) => sum + c.lat, 0) / complaintsData.length;
+                let avgLng = complaintsData.reduce((sum, c) => sum + c.lng, 0) / complaintsData.length;
+                initialCenter = [avgLat, avgLng];
+            }
+
+            map = L.map('map', { zoomControl: false }).setView(initialCenter, initialZoom); // Disable default zoom, add later
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            // Add zoom control to bottom right
+             L.control.zoom({ position: 'bottomright' }).addTo(map);
+            addLegend();
         }
-        
-        // Get filter values
+         updateMapMarkers(); // Update markers based on filters
+         mapStatus.textContent = ''; // Clear loading message
+    }
+
+    // Function to add/update markers
+    function updateMapMarkers() {
+        // Clear existing markers from the map
+        Object.values(markers).forEach(marker => map.removeLayer(marker));
+        markers = {}; // Reset the markers object
+
         const typeFilter = document.getElementById('type-filter').value;
         const statusFilter = document.getElementById('status-filter').value;
-        const sortFilter = document.getElementById('sort-filter').value;
-        
-        // Process and sort data based on filter
-        let filteredData = complaintsData.filter(complaint => 
-            (typeFilter === '' || typeFilter === 'all' || complaint.type === typeFilter) && 
-            (statusFilter === '' || statusFilter === 'all' || complaint.status === statusFilter)
+        const sortFilter = document.getElementById('sort-filter').value; // Sorting logic added client-side for demo
+
+        // Filter data
+        let filteredData = complaintsData.filter(complaint =>
+            (!typeFilter || complaint.type === typeFilter) &&
+            (!statusFilter || complaint.status === statusFilter)
         );
-        
-        // Sort data
-        switch(sortFilter) {
-            case 'oldest':
-                filteredData.sort((a, b) => new Date(a.date) - new Date(b.date));
-                break;
-            case 'status':
-                const statusOrder = {'Pending': 0, 'In Progress': 1, 'Resolved': 2};
-                filteredData.sort((a, b) => statusOrder[a.status] - statusOrder[b.status]);
-                break;
-            default: // 'newest' is default
-                filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
-                break;
+
+        // Sort data (example client-side sorting)
+         if (sortFilter === 'oldest') {
+            filteredData.sort((a, b) => new Date(a.date) - new Date(b.date));
+        } else { // Default 'newest'
+            filteredData.sort((a, b) => new Date(b.date) - new Date(a.date));
         }
-        
-        // Array to collect bounds
+
         const bounds = [];
         let visibleCount = 0;
-        
-        // Add markers for each complaint
+        complaintTypes.clear(); // Clear types for repopulation
+
+        // Add new markers
         filteredData.forEach(complaint => {
-            // Create marker with appropriate icon
             const marker = L.marker([complaint.lat, complaint.lng], {
-                icon: icons[complaint.status] || icons['Pending']
+                icon: icons[complaint.status] || icons['Default']
             });
-            
-            // Create popup content
+
             const popupContent = `
                 <div class="complaint-info">
-                    ${complaint.image_url ? `
-                    <div class="mb-2">
-                        <img src="${complaint.image_url}" alt="${complaint.type} complaint" class="img-fluid rounded" style="max-height: 120px; width: auto;">
+                    ${complaint.image_url ? `<div class="mb-2 text-center"><img src="${complaint.image_url}" alt="${complaint.type}" class="img-fluid rounded" style="max-height: 120px;"></div>` : ''}
+                    <h5>${complaint.type}</h5>
+                    <p class="mb-1"><strong>Status:</strong> <span class="badge rounded-pill ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
+                    <p class="mb-1"><strong>Ward:</strong> ${complaint.ward}</p>
+                    <p class="mb-1"><small><strong>By:</strong> ${complaint.submitted_by}</small></p>
+                    <p class="mb-2"><small><strong>Date:</strong> ${complaint.date}</small></p>
+                    <div class="d-flex justify-content-between">
+                         <a href="${complaint.url}" class="btn btn-sm btn-outline-primary py-1">Details</a>
+                         <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" target="_blank" class="btn btn-sm btn-outline-secondary py-1">Directions</a>
                     </div>
-                    ` : ''}
-                    <h5>${complaint.type} Complaint</h5>
-                    <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
-                    <p><strong>Ward:</strong> ${complaint.ward}</p>
-                    <p><strong>Submitted by:</strong> ${complaint.submitted_by}</p>
-                    <p><strong>Date:</strong> ${complaint.date}</p>
-                    <a href="${complaint.url}" class="btn btn-sm btn-outline-primary">View Details</a>
-                    <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" 
-                    target="_blank" class="btn btn-sm btn-outline-primary">
-                    View on Google Maps
-                    </a>
-                </div>
-            `;
-            
-            // Add popup to marker
+                </div>`;
             marker.bindPopup(popupContent);
-            
-            // Add marker to map
             marker.addTo(map);
-            
-            // Store marker for later reference
             markers[complaint.id] = marker;
-            
-            // Add coordinates to bounds
             bounds.push([complaint.lat, complaint.lng]);
-            
-            // Update counters
             visibleCount++;
-            
-            // Add to filter options
-            complaintTypes.add(complaint.type);
         });
-        
-        // Update visible count
+
+         // Collect all unique types from the original dataset for the filter
+         complaintsData.forEach(c => complaintTypes.add(c.type));
+
+        // Update count display
         document.getElementById('visible-count').textContent = visibleCount;
-        
-        // Fit map to bounds if there are markers
+
+        // Fit map to bounds if markers exist, otherwise keep default view
         if (bounds.length > 0) {
-            map.fitBounds(bounds);
+            map.fitBounds(bounds, { padding: [30, 30] }); // Add padding
         }
     }
 
-    // Helper function for status badge class
+    // Function to get status badge class (MUST MATCH LIST VIEW)
     function getStatusBadgeClass(status) {
-        switch(status) {
-            case 'Pending': return 'bg-danger';
-            case 'In Progress': return 'bg-primary';
-            case 'Resolved': return 'bg-success';
-            default: return 'bg-secondary';
-        }
+        // Preserving original colors: Pending=Danger, In Progress=Primary, Resolved=Success
+        if (status === 'Pending') return 'bg-danger';
+        if (status === 'In Progress') return 'bg-primary'; // Using Primary for In Progress
+        if (status === 'Resolved') return 'bg-success';
+        return 'bg-secondary'; // Default
     }
 
-    // Populate filter dropdowns
+     // Function to populate filter dropdown
     function populateFilters() {
-        // Populate complaint types dropdown
         const typeFilter = document.getElementById('type-filter');
-        
-        // Clear existing options (except the first one)
-        while (typeFilter.options.length > 1) {
-            typeFilter.remove(1);
-        }
-        
-        // Add new options
-        complaintTypes.forEach(type => {
+        const selectedTypeValue = '{{ selected_type }}'; // Get selected value from Django context
+
+        // Clear existing options (keep "All Types")
+        while (typeFilter.options.length > 1) typeFilter.remove(1);
+
+        // Sort types alphabetically before adding
+        const sortedTypes = Array.from(complaintTypes).sort();
+
+        sortedTypes.forEach(type => {
             const option = document.createElement('option');
             option.value = type;
             option.textContent = type;
-            // Check if this option should be selected
-            if (type === '{{ selected_type }}') {
-                option.selected = true;
+            if (type === selectedTypeValue) { // Set selected based on context
+                 option.selected = true;
             }
             typeFilter.appendChild(option);
         });
     }
 
-    // Initialize the map when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add all markers initially
-        addMarkersToMap();
-        
-        // Populate filters
-        populateFilters();
-        
-        // Set up instant filter event listeners for map view
-        document.getElementById('type-filter').addEventListener('change', addMarkersToMap);
-        document.getElementById('status-filter').addEventListener('change', addMarkersToMap);
-        document.getElementById('sort-filter').addEventListener('change', addMarkersToMap);
-        
-        // Also add form submission for consistency
-        const filterForm = document.getElementById('filter-form');
-        if (filterForm) {
-            // Add submit handler with delay to avoid double-filtering
-            filterForm.addEventListener('submit', function(e) {
-                // Only submit form when user clicks submit button
-                // For filter changes, we use the client-side filtering
-                if (e.submitter && e.submitter.type === 'submit') {
-                    return true;
-                }
-                e.preventDefault();
-                return false;
+    // Function to add legend to map
+     function addLegend() {
+        const legend = L.control({position: 'bottomleft'});
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            const statuses = ['Pending', 'In Progress', 'Resolved'];
+            let labels = ['<strong>Status Legend</strong>'];
+
+            statuses.forEach(status => {
+                const color = iconColors[status] || '#808080'; // Use grey if color not found
+                labels.push(
+                     `<i style="background:${color}"></i> ${status}`
+                );
             });
-        }
+            div.innerHTML = labels.join('<br>');
+            return div;
+        };
+        legend.addTo(map);
+    }
+
+
+    // Event listeners for filters
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMap(); // Initialize map on load
+        populateFilters(); // Populate filters after map is ready and types collected
+
+        document.getElementById('type-filter')?.addEventListener('change', updateMapMarkers);
+        document.getElementById('status-filter')?.addEventListener('change', updateMapMarkers);
+        document.getElementById('sort-filter')?.addEventListener('change', updateMapMarkers);
+
+         // Prevent default form submission, rely on JS updates
+        document.getElementById('filter-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
     });
 </script>
 {% endblock %}

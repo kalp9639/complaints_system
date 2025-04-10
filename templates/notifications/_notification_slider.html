@@ -1,106 +1,137 @@
+{# --- START FILE templates/notifications/_notification_slider.html --- #}
 {% load humanize %}
+{% load notification_tags %} {# Ensure tags are loaded #}
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="notificationSlider" aria-labelledby="notificationSliderLabel">
-  <div class="offcanvas-header border-bottom">
-    <h5 class="offcanvas-title" id="notificationSliderLabel">
-      Notifications 
-      {# Removed the notification count badge here #}
+{# --- ADDED STYLE BLOCK --- #}
+<style>
+    /* Target the 'View History' button specifically within the empty message container */
+    .no-notifications-message .btn-outline-secondary:hover,
+    .no-notifications-message .btn-outline-secondary:focus,
+    .no-notifications-message .btn-outline-secondary:active {
+        /* Override the default hover/focus styles */
+
+        /* Set a specific light gray background */
+        background-color: var(--bs-gray-200, #e9ecef) !important;
+
+        /* Ensure the text color stays dark and readable */
+        color: var(--bs-gray-800, #343a40) !important;
+
+        /* Optional: Slightly darken border on hover */
+        border-color: var(--bs-gray-400, #ced4da) !important;
+    }
+</style>
+{# --- END ADDED STYLE BLOCK --- #}
+
+
+<div class="offcanvas offcanvas-end shadow" tabindex="-1" id="notificationSlider" aria-labelledby="notificationSliderLabel" style="width: 380px;">
+  <div class="offcanvas-header border-bottom bg-light">
+    <h5 class="offcanvas-title text-dark fw-bold" id="notificationSliderLabel">
+      <i class="bi bi-bell-fill me-2 text-primary"></i>Notifications
     </h5>
-    
-    {# "Mark all as read" button - only show if there are unread notifications #}
+
     {% if unread_notification_count > 0 %}
       <form id="markAllReadForm" action="{% url 'mark_all_notifications_read' %}" method="post" class="ms-auto me-2">
           {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-link text-decoration-none p-0" title="Mark all as read">
-              <i class="bi bi-check2-all fs-5"></i>
+          <button type="submit" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Mark all as read">
+              Mark All Read
           </button>
       </form>
     {% endif %}
-    
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
   </div>
-  
+
   <div class="offcanvas-body p-0">
     <div class="list-group list-group-flush notification-items-container">
       {% if unread_notifications %}
         {% for notification in unread_notifications %}
+          {# Includes the updated _notification_item.html with dot indicator and new badge #}
           {% include "notifications/_notification_item.html" with notification=notification %}
         {% endfor %}
-        
-        <div class="list-group-item text-center py-2">
-          <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
-            View all notifications
-          </a>
-        </div>
+
+        <a href="{% url 'all_notifications_list' %}" class="list-group-item text-center py-2 small bg-light border-top text-decoration-none text-primary fw-bold">
+           View all notifications <i class="bi bi-arrow-right-short"></i>
+        </a>
       {% else %}
-        <div class="list-group-item text-center text-muted p-5 no-notifications-message">
-          <i class="bi bi-bell-slash fs-1 text-muted"></i>
-          <p class="mt-2 mb-1">No new notifications</p>
-          <small class="text-muted">You're all caught up!</small>
-          <div class="mt-3">
-            <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
-              View all past notifications
-            </a>
-          </div>
+        {# Updated empty state message container with the class used in the CSS #}
+        <div class="list-group-item text-center text-muted p-5 no-notifications-message d-flex flex-column align-items-center">
+          <i class="bi bi-check2-circle fs-1 mb-3 text-success"></i>
+          <p class="mb-1 fw-semibold">You're all caught up!</p>
+          <small class="text-muted mb-3">No new notifications right now.</small>
+          {# This button is now correctly styled on hover by the added CSS #}
+          <a href="{% url 'all_notifications_list' %}" class="btn btn-sm btn-outline-secondary">View History</a>
         </div>
       {% endif %}
     </div>
   </div>
 </div>
 
+{# --- JS for Mark All Read AJAX (Handles dot indicator) --- #}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     const markAllReadForm = document.getElementById('markAllReadForm');
-    
     if (markAllReadForm) {
       markAllReadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
-        // Get CSRF token
+
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        // Send AJAX request
+        const submitButton = markAllReadForm.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.textContent;
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+        submitButton.disabled = true;
+
         fetch('{% url "mark_all_notifications_read" %}', {
           method: 'POST',
           headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json'
+            'X-CSRFToken': csrfToken
           },
           credentials: 'same-origin'
         })
-        .then(response => response.json())
+        .then(response => response.ok ? response.json() : Promise.reject(`HTTP error! status: ${response.status}`))
         .then(data => {
           if (data.success) {
-            // Update the navbar notification badge
-            const navbarBadge = document.querySelector('.navbar .badge');
-            if (navbarBadge) {
-              navbarBadge.style.display = 'none';
-            }
-            
-            // Hide the mark all read button
+            const navbarBadge = document.querySelector('.navbar .btn-notification .badge');
+            if (navbarBadge) { navbarBadge.style.display = 'none'; }
+
             markAllReadForm.style.display = 'none';
-            
-            // Replace notification items with the "no notifications" message
-            const notificationItemsContainer = document.querySelector('.notification-items-container');
-            notificationItemsContainer.innerHTML = `
-              <div class="list-group-item text-center text-muted p-5 no-notifications-message">
-                <i class="bi bi-bell-slash fs-1 text-muted"></i>
-                <p class="mt-2 mb-1">No new notifications</p>
-                <small class="text-muted">You're all caught up!</small>
-                <div class="mt-3">
-                  <a href="{% url 'all_notifications_list' %}" class="text-decoration-none small">
-                    View all past notifications
-                  </a>
-                </div>
-              </div>
-            `;
+
+            const container = document.querySelector('#notificationSlider .notification-items-container');
+             container.querySelectorAll('.notification-item:not(.bg-light)').forEach(item => {
+                 const indicator = item.querySelector('.unread-indicator');
+                 if (indicator) { indicator.style.display = 'none'; } // Hide dot
+                 const placeholder = item.querySelector('.read-indicator-placeholder');
+                 if(placeholder) { placeholder.style.display = 'inline-block'; }
+
+                 item.classList.add('bg-light', 'text-muted'); // Add read styles
+
+                 // Adjust font weight
+                 const textElement = item.querySelector('.fw-semibold');
+                 if (textElement) { textElement.classList.replace('fw-semibold', 'fw-normal'); }
+                 const actorName = item.querySelector('.actor-name'); // Assuming you added this class in _item
+                 if (actorName) { actorName.style.fontWeight = 'normal'; }
+             });
+
+             const noUnreadMsg = `<div class="list-group-item text-center text-muted p-3 no-unread-message" style="order: -1;"><small>No unread notifications.</small></div>`;
+             if (!container.querySelector('.no-unread-message')) {
+                 container.insertAdjacentHTML('afterbegin', noUnreadMsg);
+             }
+
+          } else {
+             console.error("Failed to mark notifications as read:", data.message || 'Unknown error');
+             alert('Error marking notifications as read. Please try again.');
+             submitButton.textContent = originalButtonText;
+             submitButton.disabled = false;
           }
         })
         .catch(error => {
-          console.error('Error marking notifications as read:', error);
+          console.error('Fetch error marking notifications as read:', error);
+          alert('Network error marking notifications as read. Please try again.');
+          submitButton.textContent = originalButtonText;
+          submitButton.disabled = false;
         });
       });
     }
   });
 </script>
+{# --- END FILE templates/notifications/_notification_slider.html --- #}

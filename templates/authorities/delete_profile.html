@@ -1,41 +1,44 @@
+{# --- START OF FILE templates/authorities/delete_profile.html --- #}
 <!-- templates/authorities/delete_profile.html -->
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Delete Official Profile{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-5"> {# Added mt-5 for spacing #}
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
+        <div class="col-md-7 col-lg-6"> {# Adjusted column width #}
+            <div class="card shadow-sm border-danger"> {# Added shadow and danger border #}
                 <div class="card-header bg-danger text-white">
-                    <h2 class="mb-0">Delete Official Profile</h2>
+                    <h2 class="mb-0 h4"><i class="fas fa-user-shield me-2"></i><i class="fas fa-exclamation-triangle me-2"></i>Delete Official Profile</h2> {# Icons and adjusted heading size #}
                 </div>
-                <div class="card-body">
-                    <div class="alert alert-warning text-center">
-                        <strong>Warning:</strong> This action will permanently deactivate your official account.
+                <div class="card-body p-4"> {# Increased padding #}
+                    <div class="alert alert-warning text-center border-warning"> {# Added border #}
+                        <strong class="h5"><i class="fas fa-radiation-alt me-1"></i> Warning:</strong>
+                        <p class="mb-0 mt-1">This action is permanent and will deactivate your official account.</p>
                     </div>
-                    
-                    <p>By deleting your official profile:</p>
-                    <ul>
-                        <li>Your account will be deactivated.</li>
-                        <li>You will no longer be able to log in.</li>
-                        <li>Your existing complaint updates will be preserved.</li>
+
+                    <p class="mt-4">By confirming deletion:</p>
+                     <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item px-0"><i class="fas fa-times-circle text-danger me-2"></i>Your official account will be deactivated immediately.</li>
+                        <li class="list-group-item px-0"><i class="fas fa-ban text-danger me-2"></i>You will no longer be able to log in to the official portal.</li>
+                        <li class="list-group-item px-0"><i class="fas fa-archive text-secondary me-2"></i>Your past complaint updates will be preserved for record-keeping.</li>
                     </ul>
 
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-danger">
-                                Confirm Profile Deletion
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-trash-alt me-2"></i>Yes, Delete My Official Profile
                             </button>
-                            <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-secondary">
-                                Cancel
+                            <a href="{% url 'authorities:authority_dashboard' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left me-2"></i>No, Go Back to Dashboard
                             </a>
                         </div>
                     </form>
                 </div>
-            </div> 
+            </div>
         </div>
     </div>
 </div>

@@ -1,32 +1,48 @@
+{# --- START OF FILE templates/authorities/official_login.html --- #}
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Official Login - Civic Complaints System{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Government Official Login</h2>
+        <div class="col-md-7 col-lg-5"> {# Adjusted width #}
+            <div class="card shadow-sm border-0 rounded-3"> {# Card styling #}
+                 <div class="card-header bg-gradient bg-primary text-white text-center py-3"> {# Header styling #}
+                    <h2 class="mb-0 h4"><i class="fas fa-user-shield me-2"></i>Government Official Login</h2>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body p-4"> {# Increased padding #}
+
+                     {% if form.non_field_errors %}
+                        <div class="alert alert-danger small" role="alert">
+                            {{ form.non_field_errors|first }}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" novalidate>
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" name="username" class="form-control" required>
+                        <div class="mb-3 form-group">
+                            <label for="username" class="form-label small fw-bold text-secondary">Username</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Enter official username" required>
+                            {# Add error display if needed #}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control" required>
+                        <div class="mb-4 form-group">
+                            <label for="password" class="form-label small fw-bold text-secondary">Password</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter password" required>
+                             {# Add error display if needed #}
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100">Login</button> {# Made button full width #}
+                        <div class="d-grid">
+                             {# Styled button #}
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        </div>
                     </form>
-
-                    <div class="mt-4 text-center"> {# Increased margin and centered #}
-                        <p class="mb-0">Don't have an official account? <a href="{% url 'authorities:qr_verification' %}">Sign Up Here</a></p>
-                    </div>
+                </div>
+                 <div class="card-footer text-center bg-light py-3 border-0"> {# Styled footer #}
+                    <p class="mb-0 small">Don't have an official account? <a href="{% url 'authorities:qr_verification' %}" class="text-decoration-none fw-bold">Sign Up Here</a></p>
+                     <p class="mb-0 small mt-1">Not an official? <a href="{% url 'login' %}" class="text-decoration-none fw-bold">Citizen Login</a></p>
                 </div>
             </div>
         </div>

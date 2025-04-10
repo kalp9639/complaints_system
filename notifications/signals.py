@@ -142,24 +142,24 @@ def complaint_status_updated_notification(sender, instance, created, **kwargs):
             actor = instance.official.user
             actor_name = actor.get_full_name() or actor.username
 
-            # --- 1. Create On-Site Notification (Modified Verb) ---
-            # Verb describes the action, not the result status
-            verb_text = (
-                f'updated your {complaint.get_complaint_type_display()} complaint '
-            )
+            # --- 1. Create On-Site Notification (Refined Verb) ---
+            # Verb describes the action and context, template adds the status result.
+            verb_text = f'updated your {complaint.get_complaint_type_display()} complaint' # No trailing space
             if complaint.ward_number:
                 verb_text += f' in ward {complaint.ward_number}'
+            # The verb now clearly states WHAT was updated.
 
             Notification.objects.create(
                 recipient=recipient,
                 actor=actor,
-                verb=verb_text, # Store the modified verb
+                verb=verb_text, # Store the refined verb
                 target=complaint,
                 action_object=instance # Link to ComplaintUpdate holds the new status
             )
             logger.info(f"On-site notification created for complaint update {instance.id} for user {recipient.username}")
 
             # --- 2. Send SMS Notification ---
+            # Pass the update_instance containing the new status
             send_complaint_update_sms(recipient_user=recipient, complaint=complaint, update_instance=instance)
 
         except Exception as e:

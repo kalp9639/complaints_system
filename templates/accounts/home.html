@@ -5,105 +5,390 @@
 {% block title %}Home - Civic Complaints System{% endblock %}
 
 {% block extra_css %}
+    {# Styles copied and adapted from UI_home.html #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Global styles from style.css are applied via base.html */
+
+        /* Hero Section Specific Styles */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 4rem 1.5rem; /* Increased padding */
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); /* More prominent shadow */
+            text-align: center; /* Center content */
+        }
+
+        .hero-section::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+            opacity: 0.5;
+            z-index: 0; /* Behind text */
+        }
+
+        .hero-section h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative; /* Keep text above pseudo-element */
+            z-index: 1;
+        }
+
+        .hero-section p, .hero-section .btn {
+            position: relative; /* Keep text above pseudo-element */
+            z-index: 1;
+            font-size: 1.1rem; /* Adjusted size */
+            opacity: 0.95;
+        }
+
+        .hero-btn { /* Applied to buttons inside hero */
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            margin-right: 0.5rem;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .hero-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Ensure outline light button has visible border */
+        .hero-btn.btn-outline-light {
+            border: 1px solid rgba(255, 255, 255, 0.75);
+        }
+        .hero-btn.btn-outline-light:hover {
+             background-color: rgba(255, 255, 255, 0.1);
+             border-color: white;
+        }
+
+
+        /* Card Styling (already in style.css) */
+        /* Complaint Type Card Specific Styles */
+        .complaint-type-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .complaint-type-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.25rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block; /* Needed for gradient text */
+        }
+
+        /* Section Headers (already in style.css) */
+
         /* Chart Styles */
-        .chart-section { background-color: #fff; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); margin-bottom: 2rem; }
-        .chart-container { position: relative; height: 280px; width: 100%; max-width: 350px; margin: 0 auto; }
-        .line-chart-container { position: relative; height: 320px; width: 100%; }
-        .bar-chart-container { position: relative; height: 320px; width: 100%; }
-        .no-chart-data { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 150px; color: #6c757d; font-style: italic; text-align: center; background-color: #f8f9fa; border-radius: .25rem; padding: 1rem; }
-        .chart-card { height: 100%; display: flex; flex-direction: column; }
-        .chart-card .card-body { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 0.75rem; }
+        .chart-card { /* Applied to the card containing the chart */
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-card .card-body {
+            flex-grow: 1; /* Allow body to grow */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem; /* Consistent padding */
+            min-height: 300px; /* Ensure minimum height for chart container */
+        }
+        .chart-container { /* Doughnut charts */
+            position: relative;
+            height: 280px; /* Fixed height */
+            width: 100%;
+            max-width: 350px; /* Limit max width */
+            margin: 0 auto;
+        }
+        .line-chart-container,
+        .bar-chart-container { /* Bar and Line charts */
+            position: relative;
+            height: 320px; /* Standard height */
+            width: 100%; /* Full width within parent */
+        }
+        .no-chart-data {
+            display: flex;
+            flex-direction: column; /* Stack icon and text */
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 150px;
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+            background-color: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem; /* Increased padding */
+            width: 100%; /* Ensure it takes full width */
+        }
+        .no-chart-data i { /* Style icon */
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            color: #adb5bd;
+        }
+
 
         /* Heatmap Table Styles */
         .heatmap-table-container {
-            /* Removed overflow and max-height to prevent internal scrolling */
             margin-top: 1rem;
+            overflow-x: auto; /* Allow horizontal scrolling on small screens */
         }
         .heatmap-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
-            table-layout: fixed; /* Keeps columns fixed width */
-         }
+            table-layout: fixed; /* Keep columns consistent */
+            min-width: 600px; /* Prevent excessive shrinking */
+        }
         .heatmap-table th, .heatmap-table td {
             border: 1px solid #dee2e6;
-            padding: 0.4rem 0.5rem;
+            padding: 0.5rem 0.6rem;
             text-align: center;
-            white-space: nowrap; /* Prevent text wrapping in cells */
+            white-space: nowrap; /* Prevent text wrapping */
         }
         .heatmap-table thead th {
-            background-color: #f8f9fa;
-            /* Sticky positioning removed as container no longer scrolls */
+            background-color: var(--light-bg);
             font-weight: 600;
-         }
+            position: sticky; /* Keep header visible on scroll */
+            top: 0;
+            z-index: 1;
+        }
         .heatmap-table tbody th {
-            background-color: #f8f9fa;
+            background-color: var(--light-bg);
             font-weight: 600;
             text-align: left;
-            /* Sticky positioning removed as container no longer scrolls */
+            position: sticky; /* Keep row headers visible on scroll */
+            left: 0;
+            z-index: 1;
+            min-width: 100px; /* Give ward column a min width */
+        }
+        /* Ensure corner cell is sticky */
+        .heatmap-table thead th:first-child {
+            position: sticky;
+            left: 0;
+            top: 0;
+            z-index: 2; /* Above row and column headers */
+            background-color: #e9ecef; /* Slightly different background */
         }
         .heatmap-table td {
             background-color: #ffffff;
             transition: background-color 0.3s ease;
         }
+        /* Heatmap colors (from reference - old.html) */
         .heatmap-cell[data-count="0"] { background-color: #f8f9fa; color: #adb5bd;}
-        /* Color scale */
         .heatmap-cell[data-count="1"] { background-color: #cfe2ff; }
         .heatmap-cell[data-count="2"] { background-color: #b7d4ff; }
         .heatmap-cell[data-count="3"] { background-color: #a0c5ff; }
         .heatmap-cell[data-count="4"] { background-color: #8ab7ff; }
         .heatmap-cell[data-count="5"] { background-color: #74a9ff; }
+        /* Note: The mapping in old.html CSS for medium/high/very-high uses attribute selectors without values.
+           The JS applies these attributes, so the CSS below reflects that.
+           If the JS were changed to set data-count="6", etc., these rules would need adjustment. */
         .heatmap-cell[data-count-medium] { background-color: #5e9eff; } /* e.g., 6-10 */
         .heatmap-cell[data-count-high] { background-color: #3182f2; color: white;} /* e.g., 11-15 */
         .heatmap-cell[data-count-very-high] { background-color: #0b5ed7; color: white;} /* e.g., 16+ */
 
         /* Trend chart timeframe filter */
-        .timeframe-filter { margin-bottom: 0.5rem; text-align: right;}
-        /* Ensure active label style is obvious */
+        .timeframe-filter {
+            margin-bottom: 0; /* Removed bottom margin */
+            text-align: right;
+        }
         .btn-check:checked + .btn-outline-secondary {
             color: #fff;
-            background-color: #6c757d;
-            border-color: #6c757d;
+            background-color: var(--primary-color); /* Use primary color for active */
+            border-color: var(--primary-color);
         }
+        .btn-outline-secondary { /* Match overall outline style */
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+        .btn-outline-secondary:hover {
+            background-color: rgba(62, 107, 148, 0.1); /* Subtle hover */
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        .btn-check:checked + .btn-outline-secondary:hover { /* Active state hover */
+            background-color: #31567a; /* Slightly darker primary */
+            border-color: #31567a;
+            color: white;
+        }
+
+        /* Responsive tweaks from reference */
+         @media (max-width: 992px) {
+             .chart-container {
+                max-width: none; /* Allow doughnuts to take more space */
+             }
+        }
+        @media (max-width: 768px) {
+            .hero-section h1 { font-size: 2rem; }
+            .hero-section p { font-size: 1rem; }
+             .card-header.d-flex { /* Stack header content on small screens */
+                 flex-direction: column;
+                 align-items: flex-start !important; /* Align start */
+             }
+             .timeframe-filter {
+                 text-align: left; /* Align left when stacked */
+                 margin-top: 0.75rem; /* Add space when stacked */
+                 width: 100%; /* Take full width */
+             }
+             .timeframe-filter .btn-group {
+                 width: 100%; /* Make button group full width */
+             }
+             .timeframe-filter .btn {
+                 flex-grow: 1; /* Make buttons equal width */
+             }
+            .card-header span.header-title { /* Target title specifically */
+                 margin-bottom: 0.5rem; /* Add bottom margin */
+             }
+            .heatmap-table {
+                 font-size: 0.75rem;
+                 min-width: 500px;
+             }
+             .heatmap-table th, .heatmap-table td {
+                 padding: 0.4rem 0.5rem;
+             }
+        }
+         @media (max-width: 576px) {
+             .hero-section { padding: 2.5rem 1rem; } /* Adjusted padding */
+             .hero-section h1 { font-size: 1.8rem; }
+             .section-header { font-size: 1.5rem; }
+             .complaint-type-card { padding: 1rem; }
+             .chart-card .card-body { padding: 1rem; min-height: 250px; } /* Adjust padding and min-height */
+             .chart-container { height: 220px; } /* Smaller doughnut height */
+             .line-chart-container, .bar-chart-container { height: 280px; } /* Smaller bar/line height */
+             .card-header { padding: 0.6rem 1rem; }
+             .hero-btn { font-size: 0.9rem; padding: 0.6rem 1.2rem; margin-bottom: 0.5rem; } /* Stack buttons */
+             .hero-section .mt-4 { margin-top: 1rem !important; } /* Reduce top margin for buttons */
+         }
     </style>
 {% endblock %}
 
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Enhanced Hero Section -->
     <div class="row justify-content-center mb-4">
-        <div class="col-lg-10 col-md-12 text-center">
-            <h1 class="mb-3">Welcome to the Civic Complaints System</h1>
-             {# Renders conditional content based on login status/type #}
-             {% include 'accounts/_home_content_conditional.html' %}
+        <div class="col-lg-10 col-md-12">
+            <div class="hero-section fade-in">
+                <h1>Civic Complaints System</h1>
+                {# Renders conditional content based on login status/type #}
+                {% include 'accounts/_home_content_conditional.html' %}
+            </div>
         </div>
     </div>
 
-    {# --- START: User-Specific Statistics (Citizens) --- #}
+    {# General Info Section (Only for Guests) #}
+    {% if not user.is_authenticated %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <h2 class="section-header fade-in">How It Works & Complaint Types</h2>
+            </div>
+            {# How it works - Example #}
+            <div class="col-md-4 mb-4 fade-in delay-1">
+                 <div class="card h-100 complaint-type-card">
+                     <div class="card-body d-flex flex-column align-items-center">
+                         <i class="fas fa-map-marker-alt complaint-type-icon"></i>
+                         <h3 class="card-title fs-5 mt-2">1. Locate & Report</h3>
+                         <p class="card-text text-muted small">Pinpoint the issue on the map and provide details with an image.</p>
+                     </div>
+                 </div>
+             </div>
+             <div class="col-md-4 mb-4 fade-in delay-2">
+                 <div class="card h-100 complaint-type-card">
+                     <div class="card-body d-flex flex-column align-items-center">
+                         <i class="fas fa-tasks complaint-type-icon"></i>
+                         <h3 class="card-title fs-5 mt-2">2. Track Progress</h3>
+                         <p class="card-text text-muted small">Monitor the status updates from assigned officials in real-time.</p>
+                     </div>
+                 </div>
+             </div>
+             <div class="col-md-4 mb-4 fade-in delay-3">
+                 <div class="card h-100 complaint-type-card">
+                     <div class="card-body d-flex flex-column align-items-center">
+                         <i class="fas fa-check-circle complaint-type-icon"></i>
+                         <h3 class="card-title fs-5 mt-2">3. See Resolution</h3>
+                         <p class="card-text text-muted small">Get notified when the issue is resolved, with proof provided.</p>
+                     </div>
+                 </div>
+             </div>
+            {# Complaint Types #}
+            <div class="col-md-4 mb-4 fade-in delay-4">
+                <div class="card h-100 complaint-type-card">
+                    <div class="card-body d-flex flex-column align-items-center"> {# Added flex for alignment #}
+                        <i class="fas fa-trash complaint-type-icon"></i>
+                        <h3 class="card-title fs-5 mt-2">Garbage Issues</h3>
+                        <p class="card-text text-muted small">Report dumping, uncollected waste, or sanitation concerns.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4 fade-in delay-5">
+                <div class="card h-100 complaint-type-card">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <i class="fas fa-road complaint-type-icon"></i>
+                        <h3 class="card-title fs-5 mt-2">Potholes</h3>
+                        <p class="card-text text-muted small">Report potholes, broken pavement, or other road damage.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4 fade-in delay-5"> {# Reused delay #}
+                <div class="card h-100 complaint-type-card">
+                    <div class="card-body d-flex flex-column align-items-center">
+                        <i class="fas fa-cow complaint-type-icon"></i>
+                        <h3 class="card-title fs-5 mt-2">Cattle Issues</h3>
+                        <p class="card-text text-muted small">Report stray cattle, damaged property, or related issues.</p>
+                    </div>
+                </div>
+            </div>
+             <!-- Add more types if needed -->
+        </div>
+    {% endif %}
+
+    {# --- START: User-Specific Statistics (Only for Logged-in Citizens) --- #}
     {% if user.is_authenticated and not is_official %}
         <hr class="my-5">
-        <h2 class="text-center mb-4">Your Complaint Summary</h2>
+        <h2 class="section-header fade-in">Your Complaint Summary</h2>
         {# Row 1: User Doughnuts #}
-        <div class="row mt-3 g-4 justify-content-center">
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+        <div class="row mt-4 g-4 justify-content-center">
+            <div class="col-lg-5 col-md-6 fade-in delay-1">
+                <div class="card chart-card">
                     <div class="card-header">Your Complaints by Type</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="userTypeChart"></canvas>
-                            <div id="noUserTypeData" class="no-chart-data" style="display: none;">You haven't submitted any complaints yet.</div>
+                             <div id="noUserTypeData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-chart-pie"></i>
+                                You haven't submitted any complaints yet.
+                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+            <div class="col-lg-5 col-md-6 fade-in delay-2">
+                <div class="card chart-card">
                     <div class="card-header">Your Complaints by Status</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="userStatusChart"></canvas>
-                            <div id="noUserStatusData" class="no-chart-data" style="display: none;">You haven't submitted any complaints yet.</div>
+                            <div id="noUserStatusData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-tasks"></i>
+                                You haven't submitted any complaints yet.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -111,27 +396,33 @@
         </div>
         {# Row 2: User Grouped Bar #}
          <div class="row mt-4 g-4 justify-content-center">
-             <div class="col-lg-10 col-md-12">
-                 <div class="card chart-card shadow-sm">
+             <div class="col-lg-10 col-md-12 fade-in delay-3">
+                 <div class="card chart-card">
                      <div class="card-header">Your Complaints per Ward by Type</div>
                      <div class="card-body">
                          <div class="bar-chart-container">
                             <canvas id="userWardTypeGroupedBarChart"></canvas>
-                            <div id="noUserWardTypeGroupedData" class="no-chart-data" style="display: none;">No complaint data for wards available.</div>
+                            <div id="noUserWardTypeGroupedData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                No complaint data for wards available.
+                            </div>
                          </div>
                      </div>
                  </div>
              </div>
         </div>
         {# Row 3: User ART Bar Chart #}
-        <div class="row mt-4 g-4 justify-content-center">
-             <div class="col-lg-10 col-md-12">
-                 <div class="card chart-card shadow-sm">
+        <div class="row mt-4 g-4 justify-content-center mb-5">
+             <div class="col-lg-10 col-md-12 fade-in delay-4">
+                 <div class="card chart-card">
                      <div class="card-header">Your Average Complaint Resolution Time per Ward (Days)</div>
                      <div class="card-body">
                          <div class="bar-chart-container">
                             <canvas id="userArtPerWardBarChart"></canvas>
-                            <div id="noUserArtData" class="no-chart-data" style="display: none;">No resolved complaints with ward data available.</div>
+                            <div id="noUserArtData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-hourglass-half"></i>
+                                No resolved complaints with ward data available.
+                            </div>
                          </div>
                      </div>
                  </div>
@@ -140,65 +431,78 @@
     {% endif %}
     {# --- END: User-Specific Statistics --- #}
 
-    {# --- START: Official Ward Statistics --- #}
+
+    {# --- START: Official Ward Statistics (Only for Logged-in Officials) --- #}
     {% if user.is_authenticated and is_official %}
         <hr class="my-5">
-        <h2 class="text-center mb-4">Ward {{ user.official_profile.ward_number }} Complaint Summary</h2>
-        {# Row 1: Official Doughnuts #}
-        <div class="row mt-3 g-4 justify-content-center">
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+        <h2 class="section-header fade-in">Ward {{ user.official_profile.ward_number }} Complaint Summary</h2>
+        {# Row 1: Official Doughnuts - ADDED FROM OLD.HTML #}
+        <div class="row mt-4 g-4 justify-content-center">
+            <div class="col-lg-5 col-md-6 fade-in delay-1">
+                <div class="card chart-card"> {# Applied consistent styling #}
                     <div class="card-header">Complaints by Type in Your Ward</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="officialWardTypeChart"></canvas>
-                            <div id="noOfficialWardTypeData" class="no-chart-data" style="display: none;">No complaints found for your ward.</div>
+                            <div id="noOfficialWardTypeData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-chart-pie"></i> {# Added icon #}
+                                No complaints found for your ward.
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+            <div class="col-lg-5 col-md-6 fade-in delay-2">
+                <div class="card chart-card"> {# Applied consistent styling #}
                     <div class="card-header">Complaints by Status in Your Ward</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="officialWardStatusChart"></canvas>
-                            <div id="noOfficialWardStatusData" class="no-chart-data" style="display: none;">No complaints found for your ward.</div>
+                            <div id="noOfficialWardStatusData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-tasks"></i> {# Added icon #}
+                                No complaints found for your ward.
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {# Other charts are removed for officials on this page as requested #}
+        {# Other charts for officials (if any) could be added here later #}
     {% endif %}
     {# --- END: Official Ward Statistics --- #}
 
 
-    {# --- START: Overall Statistics (Guests Only) --- #}
+    {# --- START: Overall Statistics (Only for Guests) --- #}
     {% if not user.is_authenticated %}
         <hr class="my-5">
-        <h2 class="text-center mb-4">Overall Complaint Statistics</h2>
+        <h2 class="section-header fade-in">Overall Complaint Statistics</h2>
 
         {# Row 1: Overall Doughnut Charts #}
-        <div class="row mt-3 g-4 justify-content-center">
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+        <div class="row mt-4 g-4 justify-content-center">
+            <div class="col-lg-5 col-md-6 fade-in delay-1">
+                <div class="card chart-card">
                     <div class="card-header">All Complaints by Type</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="overallTypeChart"></canvas>
-                            <div id="noOverallTypeData" class="no-chart-data" style="display: none;">No overall complaint data available.</div>
+                            <div id="noOverallTypeData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-chart-pie"></i>
+                                No overall complaint data available.
+                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-5 col-md-6">
-                <div class="card chart-card shadow-sm">
+            <div class="col-lg-5 col-md-6 fade-in delay-2">
+                <div class="card chart-card">
                     <div class="card-header">All Complaints by Status</div>
                     <div class="card-body">
                         <div class="chart-container">
                             <canvas id="overallStatusChart"></canvas>
-                            <div id="noOverallStatusData" class="no-chart-data" style="display: none;">No overall complaint data available.</div>
+                            <div id="noOverallStatusData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-tasks"></i>
+                                No overall complaint data available.
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -207,13 +511,16 @@
 
         {# Row 2: Overall Grouped Bar Chart #}
         <div class="row mt-4 g-4 justify-content-center">
-             <div class="col-lg-10 col-md-12">
-                 <div class="card chart-card shadow-sm">
+             <div class="col-lg-10 col-md-12 fade-in delay-3">
+                 <div class="card chart-card">
                      <div class="card-header">Complaints per Ward by Type</div>
                      <div class="card-body">
                          <div class="bar-chart-container">
                             <canvas id="overallWardTypeGroupedBarChart"></canvas>
-                            <div id="noOverallWardTypeGroupedData" class="no-chart-data" style="display: none;">No overall complaint data available.</div>
+                            <div id="noOverallWardTypeGroupedData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-map-marked-alt"></i>
+                                No overall complaint data available.
+                             </div>
                          </div>
                      </div>
                  </div>
@@ -222,21 +529,25 @@
 
          {# Row 3: Overall Heatmap Table #}
          <div class="row mt-4 g-4 justify-content-center">
-            <div class="col-lg-10 col-md-12">
-                 <div class="card shadow-sm">
+            <div class="col-lg-10 col-md-12 fade-in delay-4">
+                 <div class="card"> {# Removed chart-card #}
                     <div class="card-header">Complaints Heatmap (Ward vs Type)</div>
                     <div class="card-body">
                          <div id="heatmapContainer" class="heatmap-table-container">
                             {# Table will be generated by JS #}
-                            <div id="noOverallHeatmapData" class="no-chart-data" style="display: none; min-height: 150px;">No overall complaint data available.</div>
+                             <div id="noOverallHeatmapData" class="no-chart-data" style="display: flex; min-height: 150px;">
+                                <i class="fas fa-th"></i>
+                                No overall complaint data available for the heatmap.
+                            </div>
                          </div>
-                         {# Optional: Static legend #}
-                         <div class="d-flex justify-content-center mt-2 small gap-2 flex-wrap">
-                            <span class="badge" style="background-color: #f8f9fa; color: #adb5bd; border: 1px solid #dee2e6;">0</span>
-                            <span class="badge" style="background-color: #cfe2ff;">1-5</span>
-                            <span class="badge" style="background-color: #5e9eff;">6-10</span>
-                            <span class="badge" style="background-color: #3182f2; color: white;">11-15</span>
-                            <span class="badge" style="background-color: #0b5ed7; color: white;">16+</span>
+                         {# Enhanced legend #}
+                         <div class="d-flex justify-content-center align-items-center mt-3 gap-2 flex-wrap">
+                             <small class="text-muted me-2">Count:</small>
+                             <span class="badge rounded-pill px-3 py-1" style="background-color: #f8f9fa; color: #adb5bd; border: 1px solid #dee2e6; font-size: 0.75rem;">0</span>
+                             <span class="badge rounded-pill px-3 py-1" style="background-color: #cfe2ff; color: #333; font-size: 0.75rem;">1-5</span>
+                             <span class="badge rounded-pill px-3 py-1" style="background-color: #5e9eff; color: white; font-size: 0.75rem;">6-10</span> {# Adjusted medium blue color #}
+                             <span class="badge rounded-pill px-3 py-1" style="background-color: #3182f2; color: white; font-size: 0.75rem;">11-15</span>
+                             <span class="badge rounded-pill px-3 py-1" style="background-color: #0b5ed7; color: white; font-size: 0.75rem;">16+</span>
                          </div>
                     </div>
                  </div>
@@ -245,26 +556,30 @@
 
          {# Row 4: Overall Resolution Trend Line Chart #}
          <div class="row mt-4 g-4 justify-content-center">
-            <div class="col-lg-10 col-md-12">
-                 <div class="card chart-card shadow-sm">
-                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap"> {# Added flex-wrap #}
-                         <span class="me-3">Complaint Trend (Created vs Resolved)</span> {# Added margin #}
-                         {# Timeframe Filter Dropdown #}
-                         <div class="timeframe-filter btn-group btn-group-sm mt-2 mt-md-0"> {# Added top margin for smaller screens #}
+            <div class="col-lg-10 col-md-12 fade-in delay-5">
+                 <div class="card chart-card">
+                     {# Updated header for responsiveness #}
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                         <span class="header-title me-3 mb-2 mb-md-0">Complaint Trend (Created vs Resolved)</span>
+                         {# Timeframe Filter #}
+                         <div class="timeframe-filter btn-group btn-group-sm">
                             <input type="radio" class="btn-check" name="trendTimeframe" id="trendWeek" value="week">
-                            <label class="btn btn-outline-secondary" for="trendWeek">Week</label>
+                            <label class="btn btn-outline-secondary px-3" for="trendWeek">Week</label>
 
                             <input type="radio" class="btn-check" name="trendTimeframe" id="trendMonth" value="month" checked>
-                            <label class="btn btn-outline-secondary active" for="trendMonth">Month</label>
+                            <label class="btn btn-outline-secondary px-3 active" for="trendMonth">Month</label>
 
                             <input type="radio" class="btn-check" name="trendTimeframe" id="trendYear" value="year">
-                            <label class="btn btn-outline-secondary" for="trendYear">Year</label>
+                            <label class="btn btn-outline-secondary px-3" for="trendYear">Year</label>
                         </div>
                     </div>
                     <div class="card-body">
                          <div class="line-chart-container">
                             <canvas id="overallResolutionTrendLineChart"></canvas>
-                             <div id="noOverallResolutionData" class="no-chart-data" style="display: none;">No resolution data available for the period.</div>
+                             <div id="noOverallResolutionData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-chart-line"></i>
+                                No resolution data available for the selected period.
+                            </div>
                          </div>
                     </div>
                  </div>
@@ -272,14 +587,17 @@
         </div>
 
         {# Row 5: Overall ART Bar Chart #}
-        <div class="row mt-4 g-4 justify-content-center">
-             <div class="col-lg-10 col-md-12">
-                 <div class="card chart-card shadow-sm">
+        <div class="row mt-4 g-4 justify-content-center mb-5">
+             <div class="col-lg-10 col-md-12 fade-in delay-5"> {# Reused delay #}
+                 <div class="card chart-card">
                      <div class="card-header">Overall Average Complaint Resolution Time per Ward (Days)</div>
                      <div class="card-body">
                          <div class="bar-chart-container">
                             <canvas id="overallArtPerWardBarChart"></canvas>
-                            <div id="noOverallArtData" class="no-chart-data" style="display: none;">No overall resolved complaints with ward data available.</div>
+                            <div id="noOverallArtData" class="no-chart-data" style="display: none;">
+                                <i class="fas fa-hourglass-half"></i>
+                                No overall resolved complaints with ward data available.
+                            </div>
                          </div>
                      </div>
                  </div>
@@ -292,21 +610,21 @@
 </div> {# End Main Container #}
 {% endblock %}
 
+
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
-        // --- Chart Instances (Global Scope within this script) ---
+        // --- Chart Instances (Global Scope) ---
         let userTypeChart, userStatusChart, userWardTypeGroupedBarChart, userArtPerWardBarChart;
-        let officialWardTypeChart, officialWardStatusChart;
+        let officialWardTypeChart, officialWardStatusChart; // ADDED for official view
         let overallTypeChart, overallStatusChart, overallWardTypeGroupedBarChart, overallResolutionTrendLineChart, overallArtPerWardBarChart;
 
         // --- Pass Django context flags to JS ---
         const isAuthenticated = {{ user.is_authenticated|yesno:"true,false" }};
         const isOfficial = {{ is_official|yesno:"true,false" }};
 
-        // --- Fixed Color Maps ---
+        // --- Fixed Color Maps (TAKEN FROM old.html JS) ---
         // Note: Ensure keys match EXACTLY the labels generated by Django in accounts/views.py
-        //       (e.g., using complaint_types_dict.get(...) for type labels)
         const typeDisplayColorMap = {
             'Garbage': '#9db17c',
             'Pothole': '#a6a6a6',
@@ -314,118 +632,204 @@
             // Add other types here if they exist, with their colors
         };
         const statusColorMap = {
-            'Pending': '#B22222',
-            'In Progress': '#1E90FF',
-            'Resolved': '#2e7d5a'
+            'Pending': '#B22222',      // Firebrick Red
+            'In Progress': '#1E90FF', // Dodger Blue
+            'Resolved': '#2e7d5a'       // Medium Sea Green (like original secondary)
         };
         const defaultColor = '#cccccc'; // Fallback color for unknown labels
 
-        // --- Other Color Palettes (For non-donut charts) ---
-        const barColors = ['#8B4513', '#9db17c', '#a6a6a6', '#0dcaf0', '#6f42c1', '#fd7e14'];
-        const lineColors = { created: 'rgb(255, 99, 132)', resolved: 'rgb(75, 192, 192)' };
-        const artBarColor = 'rgba(54, 162, 235, 0.6)';
+        // --- Other Color Palettes (Bar colors from old.html, Line/ART preserved from new home.html) ---
+        const barColors = ['#8B4513', '#9db17c', '#a6a6a6', '#0dcaf0', '#6f42c1', '#fd7e14']; // TAKEN FROM old.html
+        const lineColors = { created: 'rgb(220, 53, 69)', resolved: 'rgb(62, 107, 148)' }; // Danger (Red), Primary (Blue) - Preserved from new home.html
+        const artBarColor = 'rgba(62, 107, 148, 0.7)'; // Primary color slightly transparent - Preserved from new home.html
 
 
         document.addEventListener("DOMContentLoaded", function() {
 
-            // --- Common Chart Config ---
-            const commonDoughnutOptions = {
-                 responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom', labels: { padding: 15, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: function(context) { let label = context.label || ''; if (label) { label += ': '; } if (context.parsed !== null) { const total = context.chart.data.datasets[0].data.reduce((acc, value) => acc + value, 0); const value = context.parsed; const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%'; label += `${value} (${percentage})`; } return label; } } } } };
-            const commonBarLineOptions = {
-                 responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { padding: 15, boxWidth: 12 } }, tooltip: { mode: 'index', intersect: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } };
-             const artBarOptions = {
-                responsive: true, maintainAspectRatio: false, indexAxis: 'x', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return `Avg: ${context.parsed.y.toFixed(1)} days`; } } } }, scales: { y: { beginAtZero: true, title: { display: true, text: 'Average Days' } }, x: { title: {display: true, text: 'Ward Number'}}} };
+            // --- Common Chart Config (Adapted from UI_home.html reference / new home.html) ---
+             const commonDoughnutOptions = {
+                 responsive: true,
+                 maintainAspectRatio: false,
+                 cutout: '65%', // Adjusted cutout
+                 plugins: {
+                     legend: {
+                         position: 'bottom',
+                         labels: {
+                             padding: 20, // Increased padding
+                             boxWidth: 15, // Larger box
+                             font: { size: 12, weight: '500' }
+                         }
+                     },
+                     tooltip: {
+                         callbacks: {
+                             label: function(context) {
+                                 let label = context.label || '';
+                                 if (label) { label += ': '; }
+                                 if (context.parsed !== null) {
+                                     const total = context.chart.data.datasets[0].data.reduce((acc, value) => acc + value, 0);
+                                     const value = context.parsed;
+                                     const percentage = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                     label += `${value} (${percentage})`;
+                                 }
+                                 return label;
+                             }
+                         },
+                         backgroundColor: 'rgba(0, 0, 0, 0.8)', // Darker tooltip
+                         titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 },
+                         padding: 12, boxPadding: 6, cornerRadius: 4
+                     }
+                 },
+                 animation: { animateScale: true, animateRotate: true, duration: 800 }
+            };
 
-             // Helper to show/hide no data message
+            const commonBarLineOptions = {
+                 responsive: true,
+                 maintainAspectRatio: false,
+                 plugins: {
+                     legend: {
+                         position: 'bottom',
+                         labels: { padding: 20, boxWidth: 15, font: { size: 12, weight: '500' } }
+                     },
+                     tooltip: {
+                         mode: 'index', intersect: false,
+                         backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                         titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 },
+                         padding: 12, boxPadding: 6, cornerRadius: 4
+                     }
+                 },
+                 scales: {
+                     y: {
+                         beginAtZero: true,
+                         ticks: { precision: 0, font: { size: 11 } },
+                         grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false }
+                     },
+                     x: {
+                         ticks: { font: { size: 11 } },
+                         grid: { display: false }
+                     }
+                 },
+                 animation: { duration: 800 }
+            };
+
+             const artBarOptions = { // Specific options for ART chart
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'x', // Vertical bars
+                plugins: {
+                    legend: { display: false }, // No legend needed for single dataset
+                    tooltip: {
+                        callbacks: { label: function(context) { return `Avg: ${context.parsed.y.toFixed(1)} days`; } },
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 13 },
+                        padding: 12, boxPadding: 6, cornerRadius: 4
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Average Days', font: { size: 12, weight: 'bold' } },
+                         grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+                         ticks: { font: { size: 11 } }
+                    },
+                    x: {
+                        title: { display: true, text: 'Ward Number', font: { size: 12, weight: 'bold' } },
+                        grid: { display: false },
+                        ticks: { font: { size: 11 } }
+                    }
+                },
+                animation: { duration: 800 }
+            };
+
+             // Helper to show/hide no data message and canvas
              function toggleNoData(canvasId, msgId, hasData) {
-                const canvas = canvasId ? document.getElementById(canvasId) : null; // Allow null canvasId
+                const canvas = canvasId ? document.getElementById(canvasId) : null;
                 const msgDiv = document.getElementById(msgId);
-                if (msgDiv) { // Always check msgDiv
-                    msgDiv.style.display = hasData ? 'none' : 'flex';
-                }
-                if (canvas) { // Only act on canvas if it exists
-                    canvas.style.display = hasData ? 'block' : 'none';
+                if (!msgDiv) { console.warn(`Element with ID ${msgId} not found.`); return; }
+
+                 const parentContainer = msgDiv.closest('.card-body'); // Find parent card body
+                 if (parentContainer) { // Ensure parent is flex container for centering
+                    parentContainer.style.display = 'flex';
+                    parentContainer.style.alignItems = 'center';
+                    parentContainer.style.justifyContent = 'center';
+                 }
+
+                msgDiv.style.display = hasData ? 'none' : 'flex'; // Use flex for centering msg
+                if (canvas) { canvas.style.display = hasData ? 'block' : 'none'; }
+
+                // Special handling for heatmap container
+                if (!canvasId && msgId === 'noOverallHeatmapData') {
+                    const heatmapCont = document.getElementById('heatmapContainer');
+                    if (heatmapCont) {
+                        const table = heatmapCont.querySelector('.heatmap-table');
+                        if (table) table.style.display = hasData ? 'table' : 'none';
+                        msgDiv.style.display = hasData ? 'none' : 'flex';
+                    }
                 }
              }
-
 
             // --- Render Citizen Charts ---
             if (isAuthenticated && !isOfficial) {
                 try {
                     const userData = JSON.parse('{{ user_data|escapejs }}');
-                    console.log("User Data:", userData); // Debug: Check parsed data
+                    console.log("User Data:", userData);
 
                     // User Type Doughnut
                     const userTypeCtx = document.getElementById('userTypeChart');
-                    const userTypeData = userData?.type_chart; // Easier reference
-                    const hasUserTypeData = userTypeData?.values?.length > 0;
+                    const userTypeData = userData?.type_chart; // Ref
+                    const hasUserTypeData = userTypeData?.values?.some(v => v > 0);
                     toggleNoData('userTypeChart', 'noUserTypeData', hasUserTypeData);
                     if (userTypeCtx && hasUserTypeData && !userTypeChart) {
-                        // *** Map colors based on labels ***
-                        const backgroundColors = userTypeData.labels.map(label => typeDisplayColorMap[label] || defaultColor);
-                        userTypeChart = new Chart(userTypeCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: userTypeData.labels,
-                                datasets: [{
-                                    label: 'Your Complaints by Type',
-                                    data: userTypeData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
-                                    borderColor: '#fff',
-                                    borderWidth: 2,
-                                    hoverOffset: 8
-                                }]
-                            },
-                            options: commonDoughnutOptions
-                        });
+                       // *** USE COLOR MAP FROM old.html ***
+                       const backgroundColors = userTypeData.labels.map(label => typeDisplayColorMap[label] || defaultColor);
+                       userTypeChart = new Chart(userTypeCtx, { type: 'doughnut', data: { labels: userTypeData.labels, datasets: [{ label: 'Your Complaints by Type', data: userTypeData.values, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 8 }] }, options: commonDoughnutOptions });
                     }
 
                     // User Status Doughnut
                     const userStatusCtx = document.getElementById('userStatusChart');
-                    const userStatusData = userData?.status_chart; // Easier reference
-                    const hasUserStatusData = userStatusData?.values?.length > 0;
+                    const userStatusData = userData?.status_chart; // Ref
+                    const hasUserStatusData = userStatusData?.values?.some(v => v > 0);
                     toggleNoData('userStatusChart', 'noUserStatusData', hasUserStatusData);
                     if (userStatusCtx && hasUserStatusData && !userStatusChart) {
-                        // *** Map colors based on labels ***
-                        const backgroundColors = userStatusData.labels.map(label => statusColorMap[label] || defaultColor);
-                        userStatusChart = new Chart(userStatusCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: userStatusData.labels,
-                                datasets: [{
-                                    label: 'Your Complaints by Status',
-                                    data: userStatusData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
-                                    borderColor: '#fff',
-                                    borderWidth: 2,
-                                    hoverOffset: 8
-                                }]
-                            },
-                            options: commonDoughnutOptions
-                        });
+                         // *** USE COLOR MAP FROM old.html ***
+                         const backgroundColors = userStatusData.labels.map(label => statusColorMap[label] || defaultColor);
+                         userStatusChart = new Chart(userStatusCtx, { type: 'doughnut', data: { labels: userStatusData.labels, datasets: [{ label: 'Your Complaints by Status', data: userStatusData.values, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 8 }] }, options: commonDoughnutOptions });
                     }
 
                     // User Grouped Bar (Ward vs Type)
                     const userGroupedBarCtx = document.getElementById('userWardTypeGroupedBarChart');
-                    const hasUserGroupedBarData = userData?.ward_type_grouped_bar?.labels?.length > 0 && userData?.ward_type_grouped_bar?.datasets?.some(ds => ds.data.some(d => d > 0));
+                    const userGroupedData = userData?.ward_type_grouped_bar; // Ref
+                    const hasUserGroupedBarData = userGroupedData?.labels?.length > 0 && userGroupedData?.datasets?.some(ds => ds.data.some(d => d > 0));
                     toggleNoData('userWardTypeGroupedBarChart', 'noUserWardTypeGroupedData', hasUserGroupedBarData);
                      if (userGroupedBarCtx && hasUserGroupedBarData && !userWardTypeGroupedBarChart) {
-                         // Assign bar colors cyclically for grouped bar
-                         if (userData.ward_type_grouped_bar.datasets) { userData.ward_type_grouped_bar.datasets.forEach((dataset, index) => { dataset.backgroundColor = barColors[index % barColors.length]; }); }
-                        userWardTypeGroupedBarChart = new Chart(userGroupedBarCtx, { type: 'bar', data: userData.ward_type_grouped_bar, options: { ...commonBarLineOptions, plugins: { ...commonBarLineOptions.plugins, title: { display: false } }, scales: { x: { stacked: false }, y: { stacked: false, beginAtZero: true, ticks:{ precision: 0} } } } });
+                         // *** Assign bar colors FROM old.html palette ***
+                         if (userGroupedData.datasets) {
+                             userGroupedData.datasets.forEach((dataset, index) => {
+                                dataset.backgroundColor = barColors[index % barColors.length];
+                                dataset.borderColor = barColors[index % barColors.length];
+                                dataset.borderWidth = 1;
+                             });
+                         }
+                        const userBarOptions = JSON.parse(JSON.stringify(commonBarLineOptions));
+                        userBarOptions.scales.x.stacked = false; userBarOptions.scales.y.stacked = false;
+                        userBarOptions.plugins.title = { display: false };
+                        userWardTypeGroupedBarChart = new Chart(userGroupedBarCtx, { type: 'bar', data: userGroupedData, options: userBarOptions });
                      }
 
-                     // User ART per Ward Bar Chart
+                    // User ART per Ward Bar Chart
                     const userArtCtx = document.getElementById('userArtPerWardBarChart');
-                    const hasUserArtData = userData?.art_per_ward?.values?.length > 0;
+                    const userArtData = userData?.art_per_ward; // Ref
+                    const hasUserArtData = userArtData?.values?.length > 0 && userArtData?.values?.some(v => v > 0);
                     toggleNoData('userArtPerWardBarChart', 'noUserArtData', hasUserArtData);
                      if (userArtCtx && hasUserArtData && !userArtPerWardBarChart) {
-                        userArtPerWardBarChart = new Chart(userArtCtx, { type: 'bar', data: { labels: userData.art_per_ward.labels, datasets: [{ label: 'Avg Resolution Time (Days)', data: userData.art_per_ward.values, backgroundColor: artBarColor }] }, options: artBarOptions });
+                        userArtPerWardBarChart = new Chart(userArtCtx, {
+                            type: 'bar',
+                            data: { labels: userArtData.labels, datasets: [{ label: 'Avg Resolution Time (Days)', data: userArtData.values, backgroundColor: artBarColor, borderColor: 'rgb(62, 107, 148)', borderWidth: 1 }] },
+                            options: artBarOptions });
                      }
 
                 } catch (e) { console.error("Error rendering user charts:", e); }
             }
-            // --- Render Official Ward Charts ---
+            // --- Render Official Ward Charts (ADDED LOGIC) ---
             else if (isAuthenticated && isOfficial) {
                 try {
                     const officialData = JSON.parse('{{ official_ward_data|escapejs }}');
@@ -433,11 +837,11 @@
 
                      // Official Ward Type Doughnut
                     const officialTypeCtx = document.getElementById('officialWardTypeChart');
-                    const officialTypeData = officialData?.type_chart; // Easier reference
-                    const hasOfficialTypeData = officialTypeData?.values?.length > 0;
+                    const officialTypeData = officialData?.type_chart; // Ref
+                    const hasOfficialTypeData = officialTypeData?.values?.some(v => v > 0);
                     toggleNoData('officialWardTypeChart', 'noOfficialWardTypeData', hasOfficialTypeData);
                     if (officialTypeCtx && hasOfficialTypeData && !officialWardTypeChart) {
-                        // *** Map colors based on labels ***
+                        // *** USE COLOR MAP FROM old.html ***
                         const backgroundColors = officialTypeData.labels.map(label => typeDisplayColorMap[label] || defaultColor);
                         officialWardTypeChart = new Chart(officialTypeCtx, {
                             type: 'doughnut',
@@ -446,7 +850,7 @@
                                 datasets: [{
                                     label: 'Complaints by Type in Ward',
                                     data: officialTypeData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
+                                    backgroundColor: backgroundColors,
                                     borderColor: '#fff',
                                     borderWidth: 2,
                                     hoverOffset: 8
@@ -458,11 +862,11 @@
 
                     // Official Ward Status Doughnut
                     const officialStatusCtx = document.getElementById('officialWardStatusChart');
-                    const officialStatusData = officialData?.status_chart; // Easier reference
-                    const hasOfficialStatusData = officialStatusData?.values?.length > 0;
+                    const officialStatusData = officialData?.status_chart; // Ref
+                    const hasOfficialStatusData = officialStatusData?.values?.some(v => v > 0);
                     toggleNoData('officialWardStatusChart', 'noOfficialWardStatusData', hasOfficialStatusData);
                     if (officialStatusCtx && hasOfficialStatusData && !officialWardStatusChart) {
-                        // *** Map colors based on labels ***
+                        // *** USE COLOR MAP FROM old.html ***
                         const backgroundColors = officialStatusData.labels.map(label => statusColorMap[label] || defaultColor);
                         officialWardStatusChart = new Chart(officialStatusCtx, {
                             type: 'doughnut',
@@ -471,7 +875,7 @@
                                 datasets: [{
                                     label: 'Complaints by Status in Ward',
                                     data: officialStatusData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
+                                    backgroundColor: backgroundColors,
                                     borderColor: '#fff',
                                     borderWidth: 2,
                                     hoverOffset: 8
@@ -483,180 +887,140 @@
 
                 } catch (e) { console.error("Error rendering official ward charts:", e); }
             }
+
             // --- Render Overall Statistics Charts (Guests) ---
-            else if (!isAuthenticated) {
+            else if (!isAuthenticated) { // Handles the case where user is not logged in (guest)
                 try {
                     const overallData = JSON.parse('{{ overall_data|escapejs }}');
-                    console.log("Overall Data:", overallData); // Debug: Check parsed data
+                    console.log("Overall Data:", overallData);
 
                     // Overall Type Doughnut
                     const overallTypeCtx = document.getElementById('overallTypeChart');
-                    const overallTypeData = overallData?.type_chart; // Easier reference
-                    const hasOverallTypeData = overallTypeData?.values?.length > 0;
+                    const overallTypeData = overallData?.type_chart; // Ref
+                    const hasOverallTypeData = overallTypeData?.values?.some(v => v > 0);
                     toggleNoData('overallTypeChart', 'noOverallTypeData', hasOverallTypeData);
                     if (overallTypeCtx && hasOverallTypeData && !overallTypeChart) {
-                         // *** Map colors based on labels ***
+                        // *** USE COLOR MAP FROM old.html ***
                         const backgroundColors = overallTypeData.labels.map(label => typeDisplayColorMap[label] || defaultColor);
-                        overallTypeChart = new Chart(overallTypeCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: overallTypeData.labels,
-                                datasets: [{
-                                    label: 'All Complaints by Type',
-                                    data: overallTypeData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
-                                    borderColor: '#fff',
-                                    borderWidth: 2,
-                                    hoverOffset: 8
-                                }]
-                            },
-                            options: commonDoughnutOptions
-                        });
+                        overallTypeChart = new Chart(overallTypeCtx, { type: 'doughnut', data: { labels: overallTypeData.labels, datasets: [{ label: 'All Complaints by Type', data: overallTypeData.values, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 8 }] }, options: commonDoughnutOptions });
                     }
 
                     // Overall Status Doughnut
                     const overallStatusCtx = document.getElementById('overallStatusChart');
-                    const overallStatusData = overallData?.status_chart; // Easier reference
-                    const hasOverallStatusData = overallStatusData?.values?.length > 0;
+                    const overallStatusData = overallData?.status_chart; // Ref
+                    const hasOverallStatusData = overallStatusData?.values?.some(v => v > 0);
                     toggleNoData('overallStatusChart', 'noOverallStatusData', hasOverallStatusData);
                     if (overallStatusCtx && hasOverallStatusData && !overallStatusChart) {
-                         // *** Map colors based on labels ***
-                        const backgroundColors = overallStatusData.labels.map(label => statusColorMap[label] || defaultColor);
-                        overallStatusChart = new Chart(overallStatusCtx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: overallStatusData.labels,
-                                datasets: [{
-                                    label: 'All Complaints by Status',
-                                    data: overallStatusData.values,
-                                    backgroundColor: backgroundColors, // Use mapped colors
-                                    borderColor: '#fff',
-                                    borderWidth: 2,
-                                    hoverOffset: 8
-                                }]
-                             },
-                             options: commonDoughnutOptions
-                        });
+                         // *** USE COLOR MAP FROM old.html ***
+                         const backgroundColors = overallStatusData.labels.map(label => statusColorMap[label] || defaultColor);
+                         overallStatusChart = new Chart(overallStatusCtx, { type: 'doughnut', data: { labels: overallStatusData.labels, datasets: [{ label: 'All Complaints by Status', data: overallStatusData.values, backgroundColor: backgroundColors, borderColor: '#fff', borderWidth: 2, hoverOffset: 8 }] }, options: commonDoughnutOptions });
                     }
 
                     // Overall Grouped Bar (Ward vs Type)
                     const overallGroupedBarCtx = document.getElementById('overallWardTypeGroupedBarChart');
-                    const hasOverallGroupedBarData = overallData?.ward_type_grouped_bar?.labels?.length > 0 && overallData?.ward_type_grouped_bar?.datasets?.some(ds => ds.data.some(d => d > 0));
+                    const overallGroupedData = overallData?.ward_type_grouped_bar; // Ref
+                    const hasOverallGroupedBarData = overallGroupedData?.labels?.length > 0 && overallGroupedData?.datasets?.some(ds => ds.data.some(d => d > 0));
                     toggleNoData('overallWardTypeGroupedBarChart', 'noOverallWardTypeGroupedData', hasOverallGroupedBarData);
                     if (overallGroupedBarCtx && hasOverallGroupedBarData && !overallWardTypeGroupedBarChart) {
-                         // Assign bar colors cyclically for grouped bar
-                         if (overallData.ward_type_grouped_bar.datasets) { overallData.ward_type_grouped_bar.datasets.forEach((dataset, index) => { dataset.backgroundColor = barColors[index % barColors.length]; }); }
-                        overallWardTypeGroupedBarChart = new Chart(overallGroupedBarCtx, { type: 'bar', data: overallData.ward_type_grouped_bar, options: { ...commonBarLineOptions, plugins: { ...commonBarLineOptions.plugins, title: { display: false } }, scales: { x: { stacked: false }, y: { stacked: false, beginAtZero: true, ticks:{ precision: 0} } } } });
+                         // *** Assign bar colors FROM old.html palette ***
+                         if (overallGroupedData.datasets) {
+                             overallGroupedData.datasets.forEach((dataset, index) => {
+                                 dataset.backgroundColor = barColors[index % barColors.length];
+                                 dataset.borderColor = barColors[index % barColors.length];
+                                 dataset.borderWidth = 1;
+                             });
+                          }
+                        const overallBarOptions = JSON.parse(JSON.stringify(commonBarLineOptions));
+                        overallBarOptions.scales.x.stacked = false; overallBarOptions.scales.y.stacked = false;
+                        overallBarOptions.plugins.title = { display: false };
+                        overallWardTypeGroupedBarChart = new Chart(overallGroupedBarCtx, { type: 'bar', data: overallGroupedData, options: overallBarOptions });
                     }
 
                     // Overall Heatmap Table Generation
                     const heatmapContainer = document.getElementById('heatmapContainer');
                     const noHeatmapDataMsg = document.getElementById('noOverallHeatmapData');
-                    const hasHeatmapData = overallData?.heatmap?.wards?.length > 0 && overallData?.heatmap?.types?.length > 0;
+                    const heatmapData = overallData?.heatmap; // Ref
+                    const hasHeatmapData = heatmapData?.wards?.length > 0 && heatmapData?.types?.length > 0 && Object.keys(heatmapData.data).length > 0;
                     toggleNoData(null, 'noOverallHeatmapData', hasHeatmapData);
+
                     if (heatmapContainer && hasHeatmapData) {
-                        heatmapContainer.innerHTML = ''; // Clear
+                        heatmapContainer.innerHTML = ''; // Clear previous content
                         const table = document.createElement('table'); table.className = 'table table-bordered table-sm heatmap-table';
                         const thead = table.createTHead(); const headerRow = thead.insertRow();
-                        const thCorner = document.createElement('th'); thCorner.textContent = 'Ward'; headerRow.appendChild(thCorner);
-                        overallData.heatmap.types.forEach(typeKey => { const th = document.createElement('th'); th.textContent = overallData.heatmap.type_names[typeKey] || typeKey.charAt(0).toUpperCase() + typeKey.slice(1); headerRow.appendChild(th); });
+                        const thCorner = document.createElement('th'); thCorner.textContent = 'Ward / Type'; thCorner.style.minWidth = '100px'; headerRow.appendChild(thCorner);
+                        heatmapData.types.forEach(typeKey => { const th = document.createElement('th'); th.textContent = heatmapData.type_names[typeKey] || typeKey.charAt(0).toUpperCase() + typeKey.slice(1); th.style.minWidth = '80px'; headerRow.appendChild(th); });
                         const tbody = table.createTBody();
-                        overallData.heatmap.wards.forEach(ward => {
-                            const row = tbody.insertRow();
-                            const thWard = document.createElement('th'); thWard.textContent = ward; row.appendChild(thWard);
-                            overallData.heatmap.types.forEach(typeKey => {
-                                const cell = row.insertCell(); const count = overallData.heatmap.data[ward]?.[typeKey] || 0; cell.textContent = count; cell.classList.add('heatmap-cell'); cell.setAttribute('data-count', count);
+                        heatmapData.wards.forEach(ward => {
+                            const row = tbody.insertRow(); const thWard = document.createElement('th'); thWard.scope = 'row'; thWard.textContent = `Ward ${ward}`; row.appendChild(thWard);
+                            heatmapData.types.forEach(typeKey => {
+                                const cell = row.insertCell(); const count = heatmapData.data[ward]?.[typeKey] || 0; cell.textContent = count; cell.classList.add('heatmap-cell'); cell.setAttribute('data-count', count);
+                                // Set data attributes for CSS styling (from old.html logic)
                                 if (count > 15) { cell.setAttribute('data-count-very-high', ''); } else if (count > 10) { cell.setAttribute('data-count-high', ''); } else if (count > 5) { cell.setAttribute('data-count-medium', ''); }
                             });
                         });
                         heatmapContainer.appendChild(table);
-                    } else if(heatmapContainer) { heatmapContainer.innerHTML = ''; heatmapContainer.appendChild(noHeatmapDataMsg); }
+                        if(noHeatmapDataMsg) noHeatmapDataMsg.style.display = 'none'; // Hide msg if data shown
+                    } else if (heatmapContainer) {
+                        heatmapContainer.innerHTML = ''; // Clear residual table
+                        if(noHeatmapDataMsg) { heatmapContainer.appendChild(noHeatmapDataMsg); noHeatmapDataMsg.style.display = 'flex'; } // Show msg
+                    }
 
-
-                    // --- Overall Resolution Trend Line Chart (Initial Load & Update Logic) ---
+                    // Overall Resolution Trend Line Chart
                     const lineChartCtx = document.getElementById('overallResolutionTrendLineChart');
                     const initialTrendData = overallData?.resolution_trend;
-                    const hasInitialTrendData = initialTrendData?.labels?.length > 0 && (initialTrendData.created_counts.some(c => c > 0) || initialTrendData.resolved_counts.some(r => r > 0));
-                    toggleNoData('overallResolutionTrendLineChart', 'noOverallResolutionData', hasInitialTrendData);
+                    const hasInitialTrendData = initialTrendData?.labels?.length > 0 && (initialTrendData.created_counts?.some(c => c > 0) || initialTrendData.resolved_counts?.some(r => r > 0));
 
                     function createOrUpdateTrendChart(chartData) {
                         const ctx = document.getElementById('overallResolutionTrendLineChart');
-                        const hasData = chartData?.labels?.length > 0 && (chartData.created_counts.some(c => c > 0) || chartData.resolved_counts.some(r => r > 0));
+                        const hasData = chartData?.labels?.length > 0 && (chartData.created_counts?.some(c => c > 0) || chartData.resolved_counts?.some(r => r > 0));
                         toggleNoData('overallResolutionTrendLineChart', 'noOverallResolutionData', hasData);
-
-                        if (!ctx) return; // Exit if canvas not found
-
+                        if (!ctx) return;
                         if (hasData) {
-                            if (overallResolutionTrendLineChart) { // Chart exists, update it
-                                console.log("Updating trend chart with:", chartData);
+                             const trendLineOptions = JSON.parse(JSON.stringify(commonBarLineOptions));
+                             trendLineOptions.scales.x.ticks = { ...trendLineOptions.scales.x.ticks, autoSkip: true, maxTicksLimit: 15 };
+                             trendLineOptions.interaction = { mode: 'index', intersect: false };
+                             trendLineOptions.plugins.tooltip.position = 'nearest';
+                            if (overallResolutionTrendLineChart) {
                                 overallResolutionTrendLineChart.data.labels = chartData.labels;
-                                overallResolutionTrendLineChart.data.datasets[0].data = chartData.created_counts; // Created
-                                overallResolutionTrendLineChart.data.datasets[1].data = chartData.resolved_counts; // Resolved
+                                overallResolutionTrendLineChart.data.datasets[0].data = chartData.created_counts;
+                                overallResolutionTrendLineChart.data.datasets[1].data = chartData.resolved_counts;
+                                overallResolutionTrendLineChart.options = trendLineOptions; // Apply options potentially modified by scale/tick limits
                                 overallResolutionTrendLineChart.update();
-                            } else { // Chart doesn't exist, create it
-                                 console.log("Creating trend chart with:", chartData);
+                            } else {
                                  overallResolutionTrendLineChart = new Chart(ctx, {
                                     type: 'line',
-                                    data: {
-                                        labels: chartData.labels,
-                                        datasets: [
-                                            { label: 'Created', data: chartData.created_counts, borderColor: lineColors.created, backgroundColor: lineColors.created.replace('rgb','rgba').replace(')',', 0.1)'), fill: 'origin', tension: 0.1, pointRadius: 2, pointHoverRadius: 4 },
-                                            { label: 'Resolved', data: chartData.resolved_counts, borderColor: lineColors.resolved, backgroundColor: lineColors.resolved.replace('rgb','rgba').replace(')',', 0.1)'), fill: 'origin', tension: 0.1, pointRadius: 2, pointHoverRadius: 4 }
-                                        ]
-                                    },
-                                    options: { ...commonBarLineOptions, scales: { ...commonBarLineOptions.scales, x: { ticks: { autoSkip: true, maxTicksLimit: 15 } } } }
-                                });
+                                    data: { labels: chartData.labels, datasets: [
+                                        { label: 'Created', data: chartData.created_counts, borderColor: lineColors.created, backgroundColor: lineColors.created.replace('rgb','rgba').replace(')',' , 0.1)'), fill: 'origin', tension: 0.2, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 },
+                                        { label: 'Resolved', data: chartData.resolved_counts, borderColor: lineColors.resolved, backgroundColor: lineColors.resolved.replace('rgb','rgba').replace(')',' , 0.1)'), fill: 'origin', tension: 0.2, pointRadius: 2, pointHoverRadius: 5, borderWidth: 2 } ] },
+                                    options: trendLineOptions });
                             }
-                        } else {
-                             // If no data, destroy chart if it exists to prevent issues
-                             if (overallResolutionTrendLineChart) {
-                                 overallResolutionTrendLineChart.destroy();
-                                 overallResolutionTrendLineChart = null; // Reset instance variable
-                             }
-                        }
+                        } else { if (overallResolutionTrendLineChart) { overallResolutionTrendLineChart.destroy(); overallResolutionTrendLineChart = null; } }
                     }
-
-                    // Initial chart render
-                    createOrUpdateTrendChart(initialTrendData);
+                    createOrUpdateTrendChart(initialTrendData); // Initial render
 
                     // Event Listener for Trend Timeframe Filter
                     document.querySelectorAll('input[name="trendTimeframe"]').forEach(radio => {
                         radio.addEventListener('change', function() {
-                            const selectedTimespan = this.value;
-                            console.log("Fetching trend data for:", selectedTimespan); // Debug
-
-                            // Update active label state
+                            const selectedTimespan = this.value; console.log("Fetching trend data for:", selectedTimespan);
                             document.querySelectorAll('.timeframe-filter label').forEach(lbl => lbl.classList.remove('active'));
-                            this.nextElementSibling.classList.add('active'); // Add active class to the label associated with the checked radio
-
+                            this.nextElementSibling.classList.add('active');
                             fetch(`/accounts/api/overall-trend/?timespan=${selectedTimespan}`)
-                                .then(response => {
-                                    if (!response.ok) { throw new Error(`Network response was not ok: ${response.statusText}`); }
-                                    return response.json();
-                                })
-                                .then(newData => {
-                                    console.log("Received new trend data:", newData); // Debug
-                                    createOrUpdateTrendChart(newData); // Use the helper function
-                                })
-                                .catch(error => {
-                                    console.error('Error fetching trend data:', error);
-                                    toggleNoData('overallResolutionTrendLineChart', 'noOverallResolutionData', false); // Show no data on error
-                                    if (overallResolutionTrendLineChart) { // Destroy chart on error
-                                         overallResolutionTrendLineChart.destroy();
-                                         overallResolutionTrendLineChart = null;
-                                     }
-                                });
+                                .then(response => { if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); } return response.json(); })
+                                .then(newData => { console.log("Received new trend data:", newData); createOrUpdateTrendChart(newData); })
+                                .catch(error => { console.error('Error fetching trend data:', error); toggleNoData('overallResolutionTrendLineChart', 'noOverallResolutionData', false); if (overallResolutionTrendLineChart) { overallResolutionTrendLineChart.destroy(); overallResolutionTrendLineChart = null; } });
                         });
                     });
-                    // --- End Trend Chart Logic ---
-
 
                     // Overall ART per Ward Bar Chart
                     const overallArtCtx = document.getElementById('overallArtPerWardBarChart');
-                    const hasOverallArtData = overallData?.art_per_ward?.values?.length > 0;
+                    const overallArtData = overallData?.art_per_ward; // Ref
+                    const hasOverallArtData = overallArtData?.values?.length > 0 && overallArtData?.values?.some(v => v > 0);
                     toggleNoData('overallArtPerWardBarChart', 'noOverallArtData', hasOverallArtData);
                     if (overallArtCtx && hasOverallArtData && !overallArtPerWardBarChart) {
-                        overallArtPerWardBarChart = new Chart(overallArtCtx, { type: 'bar', data: { labels: overallData.art_per_ward.labels, datasets: [{ label: 'Avg Resolution Time (Days)', data: overallData.art_per_ward.values, backgroundColor: artBarColor }] }, options: artBarOptions });
+                         overallArtPerWardBarChart = new Chart(overallArtCtx, {
+                            type: 'bar',
+                            data: { labels: overallArtData.labels, datasets: [{ label: 'Avg Resolution Time (Days)', data: overallArtData.values, backgroundColor: artBarColor, borderColor: 'rgb(62, 107, 148)', borderWidth: 1 }] },
+                            options: artBarOptions });
                     }
 
                 } catch (e) { console.error("Error rendering overall charts:", e); }

@@ -1,103 +1,125 @@
+{# --- START OF FILE templates/authorities/official_signup.html --- #}
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Official Sign Up - Civic Complaints System{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/validation.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Government Official Sign Up</h2>
+        <div class="col-md-8 col-lg-7"> {# Adjusted width #}
+            <div class="card shadow-sm border-0 rounded-3"> {# Card styling #}
+                 <div class="card-header bg-gradient bg-primary text-white text-center py-3"> {# Header styling #}
+                     <h2 class="mb-0 h4"><i class="fas fa-user-shield me-2"></i>Government Official Sign Up</h2>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body p-4"> {# Increased padding #}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger small py-2" role="alert">
+                            {% for error in form.non_field_errors %} {{ error }}<br> {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <p class="text-muted text-center mb-4 small">Please fill out the form below to create your official account.</p>
+
+                    <form method="post" novalidate id="signup-form"> {# Use signup-form ID for JS validation if needed #}
                         {% csrf_token %}
-                        
-                        {% if form.errors %}
-                        <div class="alert alert-danger">
-                            Please correct the errors below.
-                        </div>
-                        {% endif %}
 
-                        <div class="mb-3">
-                            <label for="{{ form.username.id_for_label }}" class="form-label">Username</label>
-                            {{ form.username }}
-                            {% if form.username.errors %}
-                            <div class="text-danger">{{ form.username.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name</label>
-                            {{ form.first_name }}
-                            {% if form.first_name.errors %}
-                            <div class="text-danger">{{ form.first_name.errors }}</div>
-                            {% endif %}
+                        <div class="row g-3 mb-2">
+                             <div class="col-md-6 form-group">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.first_name.label }}</label>
+                                <input type="text" name="{{ form.first_name.html_name }}" id="{{ form.first_name.id_for_label }}" class="form-control {% if form.first_name.errors %}is-invalid{% endif %}" value="{{ form.first_name.value|default:'' }}" required>
+                                {% if form.first_name.errors %}<div class="invalid-feedback">{{ form.first_name.errors|first }}</div>{% endif %}
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.last_name.label }}</label>
+                                <input type="text" name="{{ form.last_name.html_name }}" id="{{ form.last_name.id_for_label }}" class="form-control {% if form.last_name.errors %}is-invalid{% endif %}" value="{{ form.last_name.value|default:'' }}" required>
+                                {% if form.last_name.errors %}<div class="invalid-feedback">{{ form.last_name.errors|first }}</div>{% endif %}
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name</label>
-                            {{ form.last_name }}
-                            {% if form.last_name.errors %}
-                            <div class="text-danger">{{ form.last_name.errors }}</div>
-                            {% endif %}
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.username.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.username.label }}</label>
+                             <input type="text" name="{{ form.username.html_name }}" id="{{ form.username.id_for_label }}" class="form-control {% if form.username.errors %}is-invalid{% endif %}" value="{{ form.username.value|default:'' }}" required>
+                             {% if form.username.help_text %}<small class="form-text text-muted">{{ form.username.help_text }}</small>{% endif %}
+                             {% if form.username.errors %}<div class="invalid-feedback">{{ form.username.errors|first }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
-                            {{ form.email }}
-                            {% if form.email.errors %}
-                            <div class="text-danger">{{ form.email.errors }}</div>
-                            {% endif %}
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.email.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.email.label }}</label>
+                            <input type="email" name="{{ form.email.html_name }}" id="{{ form.email.id_for_label }}" class="form-control {% if form.email.errors %}is-invalid{% endif %}" value="{{ form.email.value|default:'' }}" required>
+                            {% if form.email.help_text %}<small class="form-text text-muted">{{ form.email.help_text }}</small>{% endif %}
+                            {% if form.email.errors %}<div class="invalid-feedback">{{ form.email.errors|first }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.ward_number.id_for_label }}" class="form-label">Ward Number</label>
-                            {{ form.ward_number }}
-                            <small class="form-text text-muted">{{ form.ward_number.help_text }}</small>
-                            {% if form.ward_number.errors %}
-                            <div class="text-danger">{{ form.ward_number.errors }}</div>
-                            {% endif %}
+                         <div class="mb-3 form-group">
+                            <label for="{{ form.ward_number.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.ward_number.label }}</label>
+                             <input type="text" name="{{ form.ward_number.html_name }}" id="{{ form.ward_number.id_for_label }}" class="form-control {% if form.ward_number.errors %}is-invalid{% endif %}" value="{{ form.ward_number.value|default:'' }}" required>
+                            {% if form.ward_number.help_text %}<small class="form-text text-muted">{{ form.ward_number.help_text }}</small>{% endif %}
+                            {% if form.ward_number.errors %}<div class="invalid-feedback">{{ form.ward_number.errors|first }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.department.id_for_label }}" class="form-label">Department</label>
-                            {{ form.department }}
-                            <small class="form-text text-muted">{{ form.department.help_text }}</small>
-                            {% if form.department.errors %}
-                            <div class="text-danger">{{ form.department.errors }}</div>
-                            {% endif %}
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.department.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.department.label }}</label>
+                            <input type="text" name="{{ form.department.html_name }}" id="{{ form.department.id_for_label }}" class="form-control {% if form.department.errors %}is-invalid{% endif %}" value="{{ form.department.value|default:'' }}">
+                            {% if form.department.help_text %}<small class="form-text text-muted">{{ form.department.help_text }}</small>{% endif %}
+                            {% if form.department.errors %}<div class="invalid-feedback">{{ form.department.errors|first }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.contact_number.id_for_label }}" class="form-label">Contact Number</label>
-                            {{ form.contact_number }}
-                            <small class="form-text text-muted">{{ form.contact_number.help_text }}</small>
-                            {% if form.contact_number.errors %}
-                            <div class="text-danger">{{ form.contact_number.errors }}</div>
-                            {% endif %}
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.contact_number.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.contact_number.label }}</label>
+                             <input type="tel" name="{{ form.contact_number.html_name }}" id="{{ form.contact_number.id_for_label }}" class="form-control {% if form.contact_number.errors %}is-invalid{% endif %}" value="{{ form.contact_number.value|default:'' }}">
+                            {% if form.contact_number.help_text %}<small class="form-text text-muted">{{ form.contact_number.help_text }}</small>{% endif %}
+                            {% if form.contact_number.errors %}<div class="invalid-feedback">{{ form.contact_number.errors|first }}</div>{% endif %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.password1.id_for_label }}" class="form-label">Password</label>
-                            {{ form.password1 }}
-                            {% if form.password1.errors %}
-                            <div class="text-danger">{{ form.password1.errors }}</div>
-                            {% endif %}
+                        <hr class="my-4">
+
+                        <div class="mb-3 form-group">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.password1.label }}</label>
+                            <input type="password" name="{{ form.password1.html_name }}" id="{{ form.password1.id_for_label }}" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" required>
+                            {% if form.password1.help_text %}<small class="form-text text-muted">{{ form.password1.help_text }}</small>{% endif %}
+                            {% if form.password1.errors %}<div class="invalid-feedback">{{ form.password1.errors|first }}</div>{% endif %}
+                             {# JS validation for password strength can be added here #}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.password2.id_for_label }}" class="form-label">Confirm Password</label>
-                            {{ form.password2 }}
-                            {% if form.password2.errors %}
-                            <div class="text-danger">{{ form.password2.errors }}</div>
-                            {% endif %}
+                        <div class="mb-4 form-group">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.password2.label }}</label>
+                            <input type="password" name="{{ form.password2.html_name }}" id="{{ form.password2.id_for_label }}" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" required>
+                            {% if form.password2.help_text %}<small class="form-text text-muted">{{ form.password2.help_text }}</small>{% endif %}
+                            {% if form.password2.errors %}<div class="invalid-feedback">{{ form.password2.errors|first }}</div>{% endif %}
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Sign Up</button>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+                        </div>
                     </form>
+                </div>
+                 <div class="card-footer text-center bg-light py-3 border-0"> {# Styled footer #}
+                    <p class="mb-0 small">Already have an official account? <a href="{% url 'authorities:official_login' %}" class="text-decoration-none fw-bold">Login Here</a></p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+     {# Load form validation JS if needed #}
+     {# <script src="{% static 'js/form-validation.js' %}"></script> #}
+     <script>
+        // Basic script to add form-control class if widgets don't handle it
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('#signup-form input:not([type=hidden]):not([type=checkbox]), #signup-form select, #signup-form textarea').forEach(input => {
+                input.classList.add('form-control');
+                 if (input.closest('.form-group')?.querySelector('.invalid-feedback')) {
+                    input.classList.add('is-invalid');
+                }
+            });
+        });
+    </script>
 {% endblock %}

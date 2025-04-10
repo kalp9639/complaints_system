@@ -1,32 +1,53 @@
+{# --- START OF FILE templates/accounts/verify_login_otp.html --- #}
 {% extends 'base.html' %}
-{% block title %}Verify OTP{% endblock %}
+{% load static %}
+
+{% block title %}Verify OTP - Civic Complaints System{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h2 class="mb-0">Enter Verification Code</h2>
-            </div>
-            <div class="card-body">
-                <p>Please enter the verification code sent to your mobile number.</p>
-                <form method="post" novalidate>
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                        <div class="mb-3">
-                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% for error in field.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
-                            {% endfor %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-5"> {# Adjusted width #}
+            <div class="card shadow-sm border-0 rounded-3"> {# Card styling #}
+                <div class="card-header bg-gradient bg-primary text-white text-center py-3"> {# Header styling #}
+                    <h2 class="mb-0 h4"><i class="fas fa-shield-alt me-2"></i>Enter Verification Code</h2>
+                </div>
+                <div class="card-body p-4"> {# Increased padding #}
+        
+                    <p class="text-muted text-center mb-4 small">Please enter the 6-digit verification code (OTP) sent to your mobile number to complete login.</p>
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-4 form-group"> {# Added form-group #}
+                            <label for="{{ form.code.id_for_label }}" class="form-label small fw-bold text-secondary">{{ form.code.label }}</label>
+                            <input type="text" {# Text type for OTP #}
+                                   name="{{ form.code.html_name }}"
+                                   id="{{ form.code.id_for_label }}"
+                                   class="form-control form-control-lg text-center {% if form.code.errors %}is-invalid{% endif %}" {# Larger and centered #}
+                                   placeholder="Enter 6-digit code"
+                                   value="{{ form.code.value|default:'' }}"
+                                   required
+                                   maxlength="6"
+                                   pattern="\d{6}" {# Basic 6-digit pattern #}
+                                   inputmode="numeric" {# Hint for numeric keyboard on mobile #}
+                                   autocomplete="one-time-code" {# Helps with autofill #}
+                                   title="Enter the 6-digit code sent to your phone">
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback d-block text-center">
+                                    {{ form.code.errors|first }}
+                                </div>
+                            {% endif %}
                         </div>
-                    {% endfor %}
-                    
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">Verify & Login</button>
-                    </div>
-                </form>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Verify & Login</button>
+                        </div>
+                    </form>
+                </div>
+                 <div class="card-footer text-center bg-light py-3 border-0"> {# Styled footer #}
+                    <a href="{% url 'mobile_login' %}" class="text-decoration-none small">Back to Mobile Login</a>
+                </div>
             </div>
         </div>
     </div>

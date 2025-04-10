@@ -1,209 +1,204 @@
+{# templates/complaints/submit_complaint.html #}
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Submit Complaint - Civic Complaints System{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+{# Include Bootstrap Icons (assuming not in base.html, otherwise remove) #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{# Leaflet.Locate plugin CSS #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.css" />
 <style>
-  #map { height: 400px; width: 100%; border-radius: 8px; }
+  /* Using styles from the first file for map/location consistency */
+  #map { height: 400px; width: 100%; border-radius: var(--border-radius, 8px); border: 1px solid #dee2e6; }
   .location-info {
-    padding: 10px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #6c757d;
-    border-radius: 4px;
-    margin-bottom: 10px;
-    font-size: 14px;
-    transition: all 0.3s ease;
+    padding: 10px 15px; background-color: #f8f9fa; border-left: 4px solid #6c757d;
+    border-radius: 4px; margin-bottom: 10px; font-size: 0.85rem;
+    transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;
   }
-  .location-info.success { 
-    background-color: #d4edda; 
-    border-left-color: #28a745; 
-  }
-  .location-info.error { 
-    background-color: #f8d7da; 
-    border-left-color: #dc3545; 
-  }
-  
-  /* Image preview styling */
+  .location-info.success { background-color: #d1e7dd; border-left-color: #198754; }
+  .location-info.error { background-color: #f8d7da; border-left-color: #dc3545; }
+
+  /* Image preview styling (from second file, slightly adjusted) */
   .image-preview-container {
-    margin-top: 15px;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    background-color: #f8f9fa;
+    margin-top: 1rem; margin-bottom: 1.5rem; border: 1px solid #dee2e6;
+    border-radius: var(--border-radius, 8px); overflow: hidden; box-shadow: var(--box-shadow, 0 3px 10px rgba(0,0,0,0.1));
+    background-color: #fff;
   }
   .image-preview-header {
-    padding: 10px;
-    background-color: #e9ecef;
-    font-weight: 600;
-    color: #495057;
-    border-bottom: 1px solid #dee2e6;
+    padding: 0.6rem 1rem; background-color: #f8f9fa; font-weight: 600;
+    color: #495057; font-size: 0.9rem; border-bottom: 1px solid #dee2e6;
   }
   .image-preview-body {
-    padding: 15px;
-    text-align: center;
-    min-height: 200px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    padding: 1rem; text-align: center; min-height: 200px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
   }
   .image-preview-body img {
-    max-width: 100%;
-    max-height: 200px;
-    border-radius: 4px;
-    object-fit: contain;
+    max-width: 100%; max-height: 160px; border-radius: 4px;
+    object-fit: contain; margin-bottom: 0.5rem;
   }
-  .image-preview-body .placeholder-text {
-    color: #6c757d;
-    font-size: 0.9rem;
-  }
+  .image-preview-body .placeholder-text { color: #6c757d; font-size: 0.85rem; }
+
+  /* Custom file upload (from second file) */
   .custom-file-upload {
-    display: inline-block;
-    padding: 8px 16px;
-    cursor: pointer;
-    background-color: #e9ecef;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    transition: all 0.2s;
+    display: inline-block; padding: 0.5rem 1rem; cursor: pointer;
+    background-color: #e9ecef; border: 1px solid #ced4da; border-radius: 4px;
+    transition: all 0.2s; font-size: 0.9rem;
   }
-  .custom-file-upload:hover {
-    background-color: #dee2e6;
-  }
-  input[type="file"] {
-    display: none;
-  }
-  .form-card {
-    border: none;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    border-radius: 10px;
-    overflow: hidden;
-  }
+  .custom-file-upload:hover { background-color: #dee2e6; }
+  input[type="file"] { display: none; }
+
+  /* Card styling (from second file, potentially overridden by base.html) */
+   .form-card {
+     border: none;
+     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+     border-radius: 10px; /* Keep the rounded corners */
+     overflow: hidden; /* Keep overflow hidden */
+   }
+   /* Card styling using base bootstrap card with shadow from first file */
+   /* .form-card { } /* Uses base card style */
+
+  /* Section Divider (from first file - centered label) */
   .section-divider {
-    border-top: 1px solid #dee2e6;
-    margin: 1.5rem 0;
-    position: relative;
+    border-top: 1px solid #dee2e6; margin: 2rem 0 1.5rem;
+    position: relative; text-align: center;
   }
   .section-divider-label {
-    position: absolute;
-    top: -12px;
-    left: 20px;
-    background: white;
-    padding: 0 10px;
-    font-weight: 600;
-    color: #6c757d;
-    font-size: 0.9rem;
+    position: relative; top: -12px; background: white; padding: 0 15px;
+    font-weight: 600; color: #6c757d; font-size: 0.9rem; display: inline-block;
   }
+  label.form-label { font-weight: 600; color: #495057; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+   /* Styling for Leaflet Locate Control (from first file) */
+   .leaflet-control-locate a {
+        font-size: 1.4rem; /* Adjust icon size */
+        line-height: 30px; /* Adjust vertical alignment */
+        padding: 2px;
+   }
+   .leaflet-control-locate.active a {
+        color: var(--primary-color, #0d6efd); /* Use CSS variable or default */
+   }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container py-4">
   <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card form-card">
-        <div class="card-header bg-primary text-white py-3">
-          <h2 class="mb-0 fs-4">Submit a Complaint</h2>
+    <div class="col-lg-9 col-md-10"> {# Wider column like first file #}
+       <div class="card form-card shadow-sm"> {# Using form-card class but adding shadow-sm #}
+        <div class="card-header bg-gradient bg-primary text-white py-3"> {# Header like first file #}
+          <h2 class="mb-0 h4"><i class="bi bi-plus-circle-fill me-2"></i>Submit a New Complaint</h2> {# Using BS Icons #}
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-4 p-md-5"> {# Increased padding like first file #}
+
           <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            
+
             <!-- Complaint Type -->
-            <div class="mb-4">
-              <label for="{{ form.complaint_type.id_for_label }}" class="form-label fw-bold">{{ form.complaint_type.label }}</label>
-              {{ form.complaint_type }}
+            <div class="mb-4 form-group">
+              <label for="{{ form.complaint_type.id_for_label }}" class="form-label">{{ form.complaint_type.label }} <span class="text-danger">*</span></label>
+              {{ form.complaint_type }} {# Assumes widget adds form-select #}
               {% if form.complaint_type.errors %}
-                <div class="text-danger mt-2 small">{{ form.complaint_type.errors }}</div>
+                <div class="invalid-feedback d-block mt-1">{{ form.complaint_type.errors|first }}</div>
               {% endif %}
             </div>
-            
+
             <!-- Description -->
-            <div class="mb-4">
-              <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">{{ form.description.label }}</label>
-              {{ form.description }}
+            <div class="mb-4 form-group">
+              <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+              {{ form.description }} {# Assumes widget adds form-control #}
               {% if form.description.errors %}
-                <div class="text-danger mt-2 small">{{ form.description.errors }}</div>
+                 <div class="invalid-feedback d-block mt-1">{{ form.description.errors|first }}</div>
               {% endif %}
             </div>
-            
+
             <!-- Image Upload Section -->
             <div class="section-divider">
-              <span class="section-divider-label">Images</span>
+              <span class="section-divider-label"><i class="bi bi-image me-1"></i> Image <span class="text-danger">*</span></span>
             </div>
-            
+
             <div class="mb-4">
-              <label class="form-label fw-bold mb-3">Complaint Images</label>
-              
+              <label class="form-label mb-3">Upload Image of the Issue</label>
+
               <!-- Custom file input -->
               <div class="mb-3">
                 <label class="custom-file-upload" for="{{ form.image.id_for_label }}">
-                  <i class="bi bi-upload"></i> Choose Image
+                  <i class="bi bi-upload me-1"></i> Choose Image
                 </label>
-                <input type="file" id="{{ form.image.id_for_label }}" name="{{ form.image.name }}" accept="image/*">
+                {# IMPORTANT: Added required attribute here #}
+                <input type="file" id="{{ form.image.id_for_label }}" name="{{ form.image.name }}" accept="image/*" required>
                 <span id="file-name-display" class="ms-2 small text-muted">No file selected</span>
-                
+
                 {% if form.image.errors %}
-                  <div class="text-danger mt-2 small">{{ form.image.errors }}</div>
-                {% endif %}
-                {% if form.image.help_text %}
-                  <div class="form-text small text-muted mt-2">{{ form.image.help_text }}</div>
+                  <div class="invalid-feedback d-block mt-1">{{ form.image.errors|first }}</div>
+                 {% else %}
+                     <div class="form-text small text-muted mt-2">{{ form.image.help_text|default:"Please upload a clear image of the problem." }}</div>
                 {% endif %}
               </div>
-              
+
               <!-- Image preview -->
               <div class="image-preview-container">
                 <div class="image-preview-header">Image Preview</div>
                 <div class="image-preview-body" id="image-preview-container">
                   <img id="image-preview" src="#" alt="Image preview" style="display: none;">
-                  <p class="placeholder-text" id="upload-placeholder">Upload an image to see the preview here</p>
+                  <p class="placeholder-text" id="upload-placeholder">Upload an image to see the preview here.</p>
                 </div>
               </div>
             </div>
-            
+
             <!-- Location Section -->
             <div class="section-divider">
-              <span class="section-divider-label">Location</span>
+              <span class="section-divider-label"><i class="bi bi-geo-alt-fill me-1"></i> Location <span class="text-danger">*</span></span>
             </div>
-            
+
             <div class="mb-4">
-              <label class="form-label fw-bold mb-3">Complaint Location</label>
-              
+              <label class="form-label mb-3">Pinpoint the Complaint Location</label>
+
               <div class="mb-3">
-                <div class="d-flex flex-wrap gap-3">
-                  <div id="location-status" class="location-info flex-grow-1">
-                    <i class="bi bi-geo-alt"></i> Detecting your location...
-                  </div>
-                  <div id="ward-display" class="location-info flex-grow-1">
-                    <i class="bi bi-map"></i> Ward: <span id="ward-number">Unknown</span>
-                  </div>
-                </div>
+                 {# Using structure from first file for better display #}
+                 <div class="row g-2">
+                    <div class="col-sm-6">
+                         <div id="location-status" class="location-info">
+                             <i class="bi bi-geo-alt text-primary"></i>
+                            <span id="coord-text">Detecting location...</span>
+                         </div>
+                    </div>
+                     <div class="col-sm-6">
+                         <div id="ward-display" class="location-info">
+                             <i class="bi bi-map text-primary"></i> Ward: <span id="ward-number">Unknown</span>
+                         </div>
+                     </div>
+                 </div>
+                  {% if form.latitude.errors or form.longitude.errors %}
+                     <div class="invalid-feedback d-block mt-1 small">Please select a location on the map.</div>
+                  {% endif %}
               </div>
-              
-              <!-- Location instructions -->
-              <div class="alert alert-info mb-3" role="alert">
-                <i class="bi bi-info-circle"></i> Click anywhere on the map to select your location or use the search box to find a specific address.
+
+              <!-- Location instructions (style from first file) -->
+              <div class="alert alert-light border small p-2 mb-3" role="alert">
+                 <i class="bi bi-info-circle me-1"></i> Click map to set location or use Search. Click the <i class="bi bi-crosshair"></i> button on map for current location.
               </div>
-              
+
               <!-- Map container -->
               <div id="map" class="mb-3"></div>
-              
+
               <!-- Hidden fields for location -->
-              <input type="hidden" id="id_latitude" name="latitude">
-              <input type="hidden" id="id_longitude" name="longitude">
-              <input type="hidden" id="id_ward_number" name="ward_number">
-              
-              <div class="mb-3">
-                <button type="button" id="refresh-location" class="btn btn-outline-primary">
-                  <i class="bi bi-geo"></i> Use My Current Location
-                </button>
-              </div>
+              {# IMPORTANT: Added required attributes here #}
+              <input type="hidden" id="id_latitude" name="latitude" value="{{ form.latitude.value|default:'' }}" required>
+              <input type="hidden" id="id_longitude" name="longitude" value="{{ form.longitude.value|default:'' }}" required>
+              <input type="hidden" id="id_ward_number" name="ward_number" value="{{ form.ward_number.value|default:'' }}">
+
+              {# Separate 'Use My Current Location' button is REMOVED - Use map control #}
+
             </div>
-            
-            <!-- Form buttons -->
-            <!-- Form buttons -->
-            <div class="d-flex gap-3 mt-4">
-              <button type="submit" class="btn btn-primary w-50 py-2">Submit Complaint</button>
-              <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary w-50 py-2">Cancel</a>
+
+            <!-- Form buttons (style from first file) -->
+            <div class="d-flex gap-3 mt-5"> {# Increased top margin #}
+              <button type="submit" class="btn btn-primary flex-grow-1 py-2"><i class="fas fa-paper-plane me-2"></i>Submit Complaint</button> {# Kept FontAwesome icon here #}
+              <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary flex-grow-1 py-2">Cancel</a>
             </div>
           </form>
         </div>
@@ -214,193 +209,252 @@
 {% endblock %}
 
 {% block extra_js %}
+{# JS Includes from first file #}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+{# Leaflet.Locate plugin JS #}
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol/dist/L.Control.Locate.min.js" charset="utf-8"></script>
+
+{# --- Using the JavaScript from the FIRST file --- #}
 <script>
-  let map, marker;
-  
+  let map, marker, locateControl;
+
   // File input handler
   document.addEventListener("DOMContentLoaded", function() {
     const fileInput = document.getElementById("{{ form.image.id_for_label }}");
     const fileNameDisplay = document.getElementById("file-name-display");
-    
+
     fileInput.addEventListener("change", function() {
       if (this.files && this.files[0]) {
-        // Display selected filename
         const fileName = this.files[0].name;
-        fileNameDisplay.textContent = fileName;
-        
-        // Preview the image
+         // Truncate long filenames (from first file's JS)
+         fileNameDisplay.textContent = fileName.length > 30 ? fileName.substring(0, 27) + '...' : fileName;
         previewImage(this);
       } else {
         fileNameDisplay.textContent = "No file selected";
+        const preview = document.getElementById("image-preview");
+        const placeholder = document.getElementById("upload-placeholder");
+        preview.src = '#'; preview.style.display = "none"; placeholder.style.display = "block";
       }
     });
+
+    // Initialize map - Try current location first, fallback to default
+    getLocation(); // This will call initMap internally
+
+     // Add form control classes if not handled by widgets (from first file's JS)
+     document.querySelectorAll('form select, form textarea').forEach(el => {
+         if (el.tagName === 'SELECT' && !el.classList.contains('form-select')) { el.classList.add('form-select'); }
+         else if (el.tagName === 'TEXTAREA' && !el.classList.contains('form-control')) { el.classList.add('form-control'); }
+         // Add is-invalid class if Django rendered errors for the field
+         if (el.closest('.form-group')?.querySelector('.invalid-feedback')) { el.classList.add('is-invalid'); }
+     });
+     // Also check hidden fields' corresponding error messages
+     if (document.querySelector('#id_latitude + .invalid-feedback') || document.querySelector('#id_longitude + .invalid-feedback')) {
+         document.getElementById('map').classList.add('is-invalid'); // Maybe style the map border?
+         // Or add the class to a relevant container like location-status/ward-display
+     }
+      if (document.querySelector('#{{ form.image.id_for_label }} + .invalid-feedback')) {
+          document.querySelector('.custom-file-upload').classList.add('is-invalid'); // Style the button
+      }
   });
-  
-  // Initialize the map
-  function initMap(lat, lng) {
-    // If map already initialized, remove it and create a new one
-    if (map) {
-      map.remove();
-    }
-    
-    // Create map centered at provided coordinates
-    map = L.map('map').setView([lat, lng], 15);
-    
-    // Add OpenStreetMap tiles
+
+  // Initialize the map (from first file's JS)
+  function initMap(lat, lng, zoom = 15) {
+    if (map) { map.remove(); } // Ensure clean map instance
+
+    map = L.map('map').setView([lat, lng], zoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      maxZoom: 19, attribution: '© OpenStreetMap'
     }).addTo(map);
-    
-    // Add a draggable marker
-    marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-    
-    // Update coordinates when marker is dragged
-    marker.on('dragend', function(e) {
-      const position = marker.getLatLng();
-      updateCoordinates(position.lat, position.lng);
-      getWardInfo(position.lat, position.lng);
-    });
-    
-    // Update coordinates when map is clicked
-    map.on('click', function(e) {
-      marker.setLatLng(e.latlng);
-      updateCoordinates(e.latlng.lat, e.latlng.lng);
-      getWardInfo(e.latlng.lat, e.latlng.lng);
-    });
-    
-    // Add geocoder search control
-    const geocoder = L.Control.geocoder({
-      defaultMarkGeocode: false
+
+    // Use initial values from hidden fields if available (e.g., on form validation error)
+    const initialLat = parseFloat(document.getElementById("id_latitude").value) || lat;
+    const initialLng = parseFloat(document.getElementById("id_longitude").value) || lng;
+
+    marker = L.marker([initialLat, initialLng], {draggable: true}).addTo(map);
+    // If initial values were from hidden fields, update map view
+    if (initialLat !== lat || initialLng !== lng) {
+        map.setView([initialLat, initialLng], zoom);
+        // Trigger initial updates based on potentially old values
+        handleMarkerMove(L.latLng(initialLat, initialLng));
+    } else {
+        // Set initial display based on detected/default location
+        updateCoordinatesDisplay(lat, lng);
+        getWardInfo(lat, lng);
+        // Also set initial hidden field values explicitly here
+        document.getElementById("id_latitude").value = lat.toFixed(6);
+        document.getElementById("id_longitude").value = lng.toFixed(6);
+    }
+
+
+    marker.on('dragend', function(e) { handleMarkerMove(e.target.getLatLng()); });
+    map.on('click', function(e) { handleMarkerMove(e.latlng); });
+
+    // Geocoder (from first file's JS)
+    L.Control.geocoder({ defaultMarkGeocode: false })
+      .on('markgeocode', function(e) {
+        const latlng = e.geocode.center;
+        handleMarkerMove(latlng);
+        map.setView(latlng, 17); // Zoom closer on search result
+      })
+      .addTo(map);
+
+    // Locate Control (from first file's JS) - THIS REPLACES THE SEPARATE BUTTON
+     locateControl = L.control.locate({
+        position: 'topright', // Standard position
+        flyTo: true,
+        strings: { title: "Use my current location" },
+        locateOptions: { enableHighAccuracy: true, maxZoom: 16 } // Zoom reasonably close
     }).addTo(map);
-    
-    geocoder.on('markgeocode', function(e) {
-      const latlng = e.geocode.center;
-      marker.setLatLng(latlng);
-      map.setView(latlng, 16);
-      updateCoordinates(latlng.lat, latlng.lng);
-      getWardInfo(latlng.lat, latlng.lng);
+
+    // Event listeners for locate control
+    map.on('locationfound', function(e) {
+        // User clicked the locate button and location was found
+        handleMarkerMove(e.latlng);
+        // locateControl automatically flies the view
     });
+    map.on('locationerror', handleLocationError); // Use existing error handler
+
+    // No need for initial call to handleMarkerMove here if done based on hidden fields or detected location above
   }
-  
-  // Update coordinate fields and status
-  function updateCoordinates(lat, lng) {
-    document.getElementById("id_latitude").value = lat;
-    document.getElementById("id_longitude").value = lng;
-    
+
+    // Handles marker movement/placement (from first file's JS) - CRITICAL FOR WARD UPDATE
+    function handleMarkerMove(latlng) {
+        if (!latlng) return; // Avoid errors if latlng is somehow undefined
+        if (marker) { marker.setLatLng(latlng); }
+        updateCoordinatesDisplay(latlng.lat, latlng.lng);
+        getWardInfo(latlng.lat, latlng.lng); // <-- This ensures ward is fetched on every move/click
+        // Update hidden form fields
+        document.getElementById("id_latitude").value = latlng.lat.toFixed(6);
+        document.getElementById("id_longitude").value = latlng.lng.toFixed(6);
+
+        // If there was a validation error related to location, try to clear it visually
+        document.getElementById('map').classList.remove('is-invalid');
+        document.getElementById("location-status").classList.remove('error');
+        document.getElementById("ward-display").classList.remove('error');
+
+    }
+
+
+  // Update coordinate display text (from first file's JS)
+  function updateCoordinatesDisplay(lat, lng) {
     const statusDiv = document.getElementById("location-status");
-    statusDiv.innerHTML = `<i class="bi bi-geo-alt"></i> Coordinates: (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
-    statusDiv.className = "location-info success";
+    const coordText = document.getElementById("coord-text"); // Target the specific span
+    coordText.textContent = `Coordinates: (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+    statusDiv.className = "location-info success"; // Use specific class
+     // Clear potential validation error message if user interacts
+     const errorDiv = document.querySelector('#location-status + .invalid-feedback');
+     if (errorDiv) errorDiv.style.display = 'none';
   }
-  
-  // Get ward information from server
+
+  // Get ward information from server (from first file's JS)
   function getWardInfo(lat, lng) {
+    const wardDisplay = document.getElementById("ward-display");
+    const wardNumberSpan = document.getElementById("ward-number"); // Target the specific span
+    const wardInput = document.getElementById("id_ward_number");
+
+    wardNumberSpan.textContent = "Loading...";
+    wardDisplay.className = "location-info"; // Reset class
+
     fetch(`/complaints/get-ward/?lat=${lat}&lng=${lng}`)
-      .then(response => response.json())
+      .then(response => { if (!response.ok) throw new Error('Network response was not ok'); return response.json(); })
       .then(data => {
         const ward = data.ward || "Unknown";
-        document.getElementById("ward-number").textContent = ward;
-        document.getElementById("id_ward_number").value = ward;
-        const wardDisplay = document.getElementById("ward-display");
-        wardDisplay.className = ward !== "Unknown" ? "location-info success" : "location-info";
+        wardNumberSpan.textContent = ward;
+        wardInput.value = ward; // Update hidden field
+        wardDisplay.className = ward !== "Unknown" ? "location-info success" : "location-info"; // Set class based on result
       })
       .catch(error => {
         console.error("Error fetching ward info:", error);
-        document.getElementById("ward-number").textContent = "Error";
-        document.getElementById("ward-display").className = "location-info error";
+        wardNumberSpan.textContent = "Error";
+        wardInput.value = "Unknown"; // Set hidden field to Unknown on error
+        wardDisplay.className = "location-info error"; // Use error class
       });
   }
-  
-  // Get current location
+
+  // Get current location (from first file's JS)
   function getLocation() {
     const statusDiv = document.getElementById("location-status");
-    statusDiv.innerHTML = `<i class="bi bi-geo-alt"></i> Detecting your location...`;
-    statusDiv.className = "location-info";
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          
-          // Initialize map with current location
-          initMap(lat, lng);
-          
-          // Update form fields
-          updateCoordinates(lat, lng);
-          
-          // Get ward information
-          getWardInfo(lat, lng);
-        },
-        function(error) {
-          // Handle location errors
-          handleLocationError(error);
-          
-          // Initialize map with default coordinates
-          initMap(22.3072, 73.1812); // Default location (example: Vadodara)
-        }
-      );
+    // Use the more specific icon/text structure
+    statusDiv.innerHTML = `<i class="bi bi-hourglass-split text-primary"></i> <span id="coord-text">Detecting location...</span>`;
+    statusDiv.className = "location-info"; // Reset class
+
+    // Check for existing valid coordinates in hidden fields first (in case of page reload after validation error)
+    const existingLat = parseFloat(document.getElementById("id_latitude").value);
+    const existingLng = parseFloat(document.getElementById("id_longitude").value);
+
+    if (!isNaN(existingLat) && !isNaN(existingLng) && existingLat !== 0 && existingLng !== 0) {
+        console.log("Initializing map with existing coordinates from form.");
+        initMap(existingLat, existingLng, 16); // Initialize map with existing coords
+    } else if (navigator.geolocation) {
+        console.log("Attempting to get current geolocation.");
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                console.log("Geolocation successful.");
+                initMap(lat, lng, 16); // Zoom in closer for current location
+                // Note: initMap now handles setting initial display/fields
+            },
+            function(error) {
+                console.log("Geolocation failed, falling back to default.");
+                handleLocationError(error); // Show error message
+                // Fallback to default Vadodara coordinates if location fails
+                initMap(22.3072, 73.1812, 12);
+            },
+            // Options for geolocation
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
     } else {
-      statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Geolocation is not supported by this browser.`;
-      statusDiv.className = "location-info error";
-      
-      // Initialize map with default coordinates
-      initMap(22.3072, 73.1812); // Default location (example: Vadodara)
+        // Geolocation not supported
+        console.log("Geolocation not supported, falling back to default.");
+        statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span id="coord-text">Geolocation not supported.</span>`;
+        statusDiv.className = "location-info error";
+        initMap(22.3072, 73.1812, 12); // Fallback to default
     }
   }
-  
-  // Handle location errors
+
+  // Handle location errors (from first file's JS)
   function handleLocationError(error) {
+    console.warn("Location Error Code:", error.code, "Message:", error.message);
     const statusDiv = document.getElementById("location-status");
-    let errorMessage = "";
-    
+    let errorMessage = "Could not get location. ";
     switch(error.code) {
-      case error.PERMISSION_DENIED:
-        errorMessage = "Location access denied. Please enable location services or select location on the map.";
-        break;
-      case error.POSITION_UNAVAILABLE:
-        errorMessage = "Location information unavailable. Please select location on the map.";
-        break;
-      case error.TIMEOUT:
-        errorMessage = "Location request timed out. Please select location on the map.";
-        break;
-      default:
-        errorMessage = "An unknown error occurred. Please select location on the map.";
+      case 1: errorMessage += "Permission denied."; break; // PERMISSION_DENIED
+      case 2: errorMessage += "Position unavailable."; break; // POSITION_UNAVAILABLE
+      case 3: errorMessage += "Request timed out."; break; // TIMEOUT
+      default: errorMessage += "Unknown error.";
     }
-    
-    statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${errorMessage}`;
+     // Update the location status display with the error
+    statusDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span id="coord-text">${errorMessage}</span>`;
     statusDiv.className = "location-info error";
+
+    // Do NOT re-initialize map here if it's already being handled by the fallback in getLocation
   }
-  
-  // Image preview function
+
+  // Image preview function (from first file's JS - essentially same as second)
   function previewImage(input) {
     const preview = document.getElementById("image-preview");
     const placeholder = document.getElementById("upload-placeholder");
-    
     if (input.files && input.files[0]) {
       const reader = new FileReader();
-      
       reader.onload = function(e) {
         preview.src = e.target.result;
         preview.style.display = "block";
         placeholder.style.display = "none";
       };
-      
       reader.readAsDataURL(input.files[0]);
+       // If there was a validation error for image, try to clear it
+       document.querySelector('.custom-file-upload').classList.remove('is-invalid');
+       const errorDiv = document.querySelector('#{{ form.image.id_for_label }} + .invalid-feedback');
+       if (errorDiv) errorDiv.style.display = 'none';
+
     } else {
+      preview.src = '#';
       preview.style.display = "none";
       placeholder.style.display = "block";
     }
   }
-  
-  // Initialize when page loads
-  document.addEventListener("DOMContentLoaded", function() {
-    getLocation();
-    
-    // Set up refresh location button
-    document.getElementById("refresh-location").addEventListener("click", getLocation);
-  });
+
 </script>
 {% endblock %}

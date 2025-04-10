@@ -660,6 +660,7 @@ class UsernameOrEmailPasswordResetView(View):
                 'subject_template_name': 'accounts/password_reset_subject.txt',
                 'html_email_template_name': 'accounts/password_reset_email.html',
                 'request': request,
+                'domain_override': request.get_host(),
             }
             # Let Django handle the email sending
             form.save(**opts)

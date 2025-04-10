@@ -1,95 +1,139 @@
-<!-- templates/profile.html -->
+{# --- START OF FILE templates/accounts/profile.html --- #}
+<!-- templates/accounts/profile.html -->
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Your Profile - Civic Complaints System{% endblock %}
 
+{% block extra_css %}
+<style>
+    .profile-icon-wrapper {
+        width: 60px; /* Increased size */
+        height: 60px; /* Increased size */
+        border: 2px solid var(--primary-color); /* Added border */
+    }
+    .profile-icon-wrapper i {
+        color: var(--primary-color); /* Match border color */
+    }
+    .info-label {
+        flex-basis: 120px; /* Adjust basis for label width */
+        flex-shrink: 0;
+    }
+    .info-value {
+        flex-grow: 1;
+    }
+    .list-group-item {
+         border-bottom: 1px solid #eee !important; /* Subtle separator */
+         padding-top: 0.75rem !important;
+         padding-bottom: 0.75rem !important;
+    }
+     .list-group-item:last-child {
+         border-bottom: none !important;
+     }
+    .action-card .btn {
+        text-align: left; /* Align text left in buttons */
+        padding: 0.75rem 1rem; /* Adjust padding */
+    }
+    .action-card .btn i {
+        width: 20px; /* Ensure consistent icon alignment */
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
-    <div class="row">
+    <h1 class="section-header mb-5 fade-in">Your Profile</h1>
+
+    <div class="row justify-content-center g-4">
         <!-- Left Column - User Info -->
-        <div class="col-md-8 mb-4">
+        <div class="col-lg-7">
             <!-- Main Profile Card -->
-            <div class="card shadow-sm rounded-3 border-0 mb-4">
-                <div class="card-header bg-gradient bg-primary text-white py-3">
-                    <div class="d-flex align-items-center">
-                        <div class="rounded-circle bg-light text-primary d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px;">
-                            <i class="fas fa-user fa-lg"></i>
+            <div class="card shadow-sm rounded-3 border-0 mb-4 fade-in delay-1">
+                <div class="card-body p-4 p-md-5"> {# Increased padding #}
+                     <div class="d-flex align-items-center mb-4">
+                        <div class="rounded-circle bg-light border profile-icon-wrapper d-flex align-items-center justify-content-center me-3">
+                            <i class="fas fa-user fa-2x"></i> {# Larger icon #}
                         </div>
-                        <h2 class="mb-0">Welcome, {{ user.first_name|default:user.username }}</h2>
-                    </div>
-                </div>
-                
-                <div class="card-body p-4">
-                    <!-- User Info in Two Columns -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5 class="text-primary mb-3">Account Information</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Username:</span>
-                                    <span>{{ user.username }}</span>
-                                </li>
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Email:</span>
-                                    <span>{{ user.email }}</span>
-                                </li>
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Joined:</span>
-                                    <span>{{ user.date_joined|date:"F j, Y" }}</span>
-                                </li>
-                            </ul>
+                        <div>
+                            <h2 class="mb-0 h4">Welcome, {{ user.first_name|default:user.username }}!</h2>
+                             <p class="text-muted mb-0 small">Manage your profile and complaint activity.</p>
                         </div>
-                        <div class="col-md-6">
-                            <h5 class="text-primary mb-3">Personal Details</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Name:</span>
-                                    <span>{{ user.first_name }} {{ user.last_name }}</span>
-                                </li>
-                                <li class="list-group-item px-0 py-2 d-flex border-0">
-                                    <span class="fw-semibold text-secondary me-2 w-25">Mobile:</span>
-                                    <span>
-                                        {% if user.profile.mobile_number %}
-                                            {{ user.profile.mobile_number }}
-                                        {% else %}
-                                            <span class="text-muted fst-italic">Not provided</span>
-                                        {% endif %}
-                                    </span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 text-center">
-                        <a href="{% url 'edit_profile' %}" class="btn btn-primary px-4">
-                            <i class="fas fa-edit me-2"></i>Edit Profile
+                        <a href="{% url 'edit_profile' %}" class="btn btn-outline-primary btn-sm ms-auto">
+                            <i class="fas fa-edit me-1"></i>Edit
                         </a>
                     </div>
+
+                    <hr class="my-4">
+
+                    <!-- User Info -->
+                    <h5 class="text-primary mb-3 small text-uppercase fw-bold">Account Information</h5>
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item px-0 py-2 d-flex border-0">
+                            <span class="fw-semibold text-secondary me-3 info-label"><i class="fas fa-user-tag fa-fw me-2"></i>Username:</span>
+                            <span class="info-value">{{ user.username }}</span>
+                        </li>
+                        <li class="list-group-item px-0 py-2 d-flex border-0">
+                            <span class="fw-semibold text-secondary me-3 info-label"><i class="fas fa-envelope fa-fw me-2"></i>Email:</span>
+                            <span class="info-value">{{ user.email }}</span>
+                        </li>
+                        <li class="list-group-item px-0 py-2 d-flex border-0">
+                            <span class="fw-semibold text-secondary me-3 info-label"><i class="fas fa-calendar-alt fa-fw me-2"></i>Joined:</span>
+                            <span class="info-value">{{ user.date_joined|date:"F j, Y" }}</span>
+                        </li>
+                         <li class="list-group-item px-0 py-2 d-flex border-0">
+                            <span class="fw-semibold text-secondary me-3 info-label"><i class="fas fa-id-card fa-fw me-2"></i>Full Name:</span>
+                            <span class="info-value">{{ user.get_full_name|default:"<i class='text-muted'>Not Set</i>"|safe }}</span>
+                        </li>
+                         <li class="list-group-item px-0 py-2 d-flex border-0">
+                            <span class="fw-semibold text-secondary me-3 info-label"><i class="fas fa-mobile-alt fa-fw me-2"></i>Mobile:</span>
+                            <span class="info-value">
+                                {% if user.profile.mobile_number %}
+                                    {{ user.profile.mobile_number }}
+                                    {% if user.profile.mobile_verified %}
+                                         <i class="fas fa-check-circle text-success ms-1" title="Verified"></i>
+                                    {% else %}
+                                         <i class="fas fa-exclamation-circle text-warning ms-1" title="Not Verified"></i>
+                                         {# Optional: Add link to verify? #}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fst-italic">Not provided</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                    {# Removed centered edit button as it's now in the header #}
                 </div>
             </div>
         </div>
-        
+
         <!-- Right Column - Actions -->
-        <div class="col-md-4">
-            <div class="card shadow-sm rounded-3 border-0">
-                <div class="card-header bg-gradient bg-primary text-white py-3">
-                    <h3 class="mb-0">Quick Actions</h3>
+        <div class="col-lg-5">
+            <div class="card shadow-sm rounded-3 border-0 action-card fade-in delay-2">
+                <div class="card-header bg-light py-3">
+                    <h3 class="mb-0 h6 text-primary"><i class="fas fa-bolt me-2"></i>Quick Actions</h3>
                 </div>
-                
-                <div class="card-body p-4">
-                    <div class="d-grid gap-3">
-                        <a href="{% url 'submit_complaint' %}" class="btn btn-success btn-lg">
-                            <i class="fas fa-plus-circle me-2"></i>Submit New Complaint
+
+                <div class="card-body p-3"> {# Reduced padding #}
+                    <div class="d-grid gap-2"> {# Reduced gap #}
+                        <a href="{% url 'submit_complaint' %}" class="btn btn-success">
+                            <i class="fas fa-plus-circle me-2 fa-fw"></i>Submit New Complaint
                         </a>
-                        
-                        <a href="{% url 'view_complaints' %}" class="btn btn-info btn-lg text-white">
-                            <i class="fas fa-list-alt me-2"></i>View Your Complaints
+
+                        <a href="{% url 'view_complaints' %}" class="btn btn-info text-white">
+                            <i class="fas fa-list-alt me-2 fa-fw"></i>View Your Complaints
                         </a>
-                        
+                         <a href="{% url 'map_view' %}" class="btn btn-secondary">
+                            <i class="fas fa-map-marked-alt me-2 fa-fw"></i>View Complaints Map
+                        </a>
+                        <a href="{% url 'trash_bin' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-trash me-2 fa-fw"></i>View Trash Bin
+                        </a>
+
                         <hr class="my-2">
-                        
-                        <a href="{% url 'logout' %}" class="btn btn-outline-danger">
-                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+
+                        <a href="{% url 'logout' %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to logout?');">
+                            <i class="fas fa-sign-out-alt me-2 fa-fw"></i>Logout
                         </a>
                     </div>
                 </div>

@@ -1,218 +1,267 @@
+{# --- START OF FILE templates/complaints/map_view.html --- #}
 <!-- templates/complaints/map_view.html -->
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Complaints Map - Civic Complaints System{% endblock %}
 
 {% block extra_css %}
-<!-- Include Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""/>
 <style>
+    /* Using styles from base.css and style.css */
     #map {
-        height: 600px;
+        height: 65vh; /* Adjusted height */
+        min-height: 500px;
         width: 100%;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        border: 1px solid #dee2e6; /* Subtle border */
+        margin-bottom: 1.5rem; /* Space below map */
     }
     .complaint-info {
-        max-width: 300px;
+        max-width: 280px;
+        font-size: 0.875rem; /* Slightly smaller popup font */
     }
-    .filter-controls {
-        margin-bottom: 20px;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 8px;
+    .complaint-info h5 {
+        font-size: 1.05rem; /* Adjusted heading size */
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
     }
+    .complaint-info p { margin-bottom: 0.3rem; }
+    .complaint-info .badge { font-size: 0.75rem; }
+    /* PRESERVED STATUS COLORS */
+    .badge.bg-danger { background-color: #dc3545 !important; }
+    .badge.bg-primary { background-color: #3e6b94 !important; }
+    .badge.bg-success { background-color: #198754 !important; }
+
+    .complaint-info img { max-height: 130px; object-fit: cover; margin-bottom: 0.5rem; }
+    .complaint-info .btn-sm { padding: 0.2rem 0.5rem; font-size: 0.75rem; }
+
+    .filter-card { margin-bottom: 1rem; } /* Space below filters */
+
+    .legend {
+        padding: 6px 8px; font: 12px Arial, Helvetica, sans-serif;
+        background: rgba(255, 255, 255, 0.9); /* Slightly less transparent */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+        border-radius: 5px; line-height: 18px; color: #555;
+    }
+    .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.9; border-radius: 3px; }
 </style>
 {% endblock %}
 
 {% block content %}
+<div class="container mt-4"> {# Reduced top margin #}
 
-<div class="container mt-10">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Complaints Map</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap"> {# Added flex-wrap #}
+        <h1 class="h3 mb-2 mb-md-0">Complaints Map</h1>
         <div class="d-flex gap-2">
-            <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary me-2">List View</a>
-            <a href="{% url 'submit_complaint' %}" class="btn btn-primary">Submit New Complaint</a>
+            <a href="{% url 'view_complaints' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-list me-1"></i>List View</a>
+            <a href="{% url 'submit_complaint' %}" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Submit New Complaint</a>
         </div>
     </div>
-    
-    <!-- Filter controls -->
-    <div class="card mb-3">
+
+    <!-- Filter Card -->
+     <div class="card filter-card shadow-sm border-0">
         <div class="card-body p-3">
-            <form id="filter-form" method="get" class="row g-2">
-                <div class="col-md-4">
-                    <select id="type-filter" name="type" class="form-select form-select">
+            <form id="filter-form" method="get" class="row g-2 align-items-center">
+                 <div class="col-lg-3 col-md-6">
+                    <label for="type-filter" class="visually-hidden">Type</label>
+                    <select id="type-filter" name="type" class="form-select form-select-sm">
                         <option value="">All Types</option>
                         {% for type_id, type_name in complaint_types %}
                             <option value="{{ type_id }}" {% if selected_type == type_id %}selected{% endif %}>{{ type_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select id="status-filter" name="status" class="form-select form-select">
+                 <div class="col-lg-3 col-md-6">
+                     <label for="status-filter" class="visually-hidden">Status</label>
+                    <select id="status-filter" name="status" class="form-select form-select-sm">
                         <option value="">All Statuses</option>
                         <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
                         <option value="In Progress" {% if selected_status == 'In Progress' %}selected{% endif %}>In Progress</option>
                         <option value="Resolved" {% if selected_status == 'Resolved' %}selected{% endif %}>Resolved</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <select id="ward-filter" name="ward" class="form-select form-select">
+                 <div class="col-lg-4 col-md-6">
+                     <label for="ward-filter" class="visually-hidden">Ward</label>
+                    <select id="ward-filter" name="ward" class="form-select form-select-sm">
                         <option value="">All Wards</option>
                         {% for ward in wards %}
-                            <option value="{{ ward }}" {% if selected_ward == ward %}selected{% endif %}>{{ ward }}</option>
+                            <option value="{{ ward }}" {% if selected_ward == ward %}selected{% endif %}>Ward {{ ward }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-1 d-flex">
-                    <a href="{% url 'map_view' %}" class="btn btn btn-secondary flex-grow-1">Reset</a>
+                <div class="col-lg-2 col-md-6 d-grid">
+                    <a href="{% url 'map_view' %}" class="btn btn-secondary btn-sm">Reset Filters</a>
                 </div>
             </form>
         </div>
     </div>
-    
+
     <!-- Map statistics -->
-    <div class="alert alert-info mb-4">
-        <strong>Total Complaints on Map:</strong> <span id="visible-count">{{ complaint_count }}</span> of {{ total_count }}
+    <div class="alert alert-light border py-2 px-3 mb-3 small d-flex justify-content-between">
+        <span><i class="fas fa-info-circle me-1 text-primary"></i> Showing <strong id="visible-count">{{ complaint_count }}</strong> of <strong>{{ total_count }}</strong> complaints.</span>
         {% if filtered %}
-        <a href="{% url 'map_view' %}" class="ms-2 text-decoration-none">(Clear Filters)</a>
+            <a href="{% url 'map_view' %}" class="text-decoration-none fw-bold">(Clear Filters)</a>
         {% endif %}
     </div>
-    
+
     <!-- Map container -->
-    <div id="map"></div>
+    <div id="map">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading map...</span>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- Include Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
 <script>
-    // Complaint data from the server (already filtered)
+    // Complaint data from the server (already filtered by view)
     const complaintsData = {{ complaints_data|safe }};
-    
-    // Initialize the map
-    const map = L.map('map').setView([20.5937, 78.9629], 5); // Default view of India
-    
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-    
-    // Map for storing markers by complaint ID
-    const markers = {};
-    
-    // Icons for different statuses
-    const icons = {
+    const totalComplaintCount = {{ total_count|default:0 }}; // Get total count from context
+
+    let map;
+    let markersLayer = L.layerGroup(); // Use a layer group for easy clearing
+
+    // Icons for different statuses (ensure full URLs)
+     const icons = {
         'Pending': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         }),
         'In Progress': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         }),
         'Resolved': L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+        }),
+        'Default': L.icon({ // Fallback icon
+             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         })
     };
-    
+     const iconColors = { // For legend
+        'Pending': '#d32f2f', 'In Progress': '#1976d2', 'Resolved': '#388e3c'
+    };
+
+    // Initialize the map
+    function initializeMap() {
+        let initialCenter = [22.3072, 73.1812]; // Default Vadodara
+        let initialZoom = 12;
+
+         // Attempt to center based on available data
+         if (complaintsData.length > 0) {
+            let avgLat = 0; let avgLng = 0;
+            complaintsData.forEach(c => { avgLat += c.lat; avgLng += c.lng; });
+            initialCenter = [avgLat / complaintsData.length, avgLng / complaintsData.length];
+            // Basic zoom level adjustment - could be more sophisticated
+            initialZoom = (complaintsData.length > 1) ? 13 : 15;
+         } else {
+             initialZoom = 11; // Zoom out slightly if no complaints initially
+         }
+
+        map = L.map('map', { zoomControl: false }).setView(initialCenter, initialZoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap'
+        }).addTo(map);
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+        markersLayer.addTo(map); // Add the layer group
+        addLegend();
+        updateMapMarkers(); // Add markers based on initial data
+    }
+
     // Function to add markers
-    function addMarkersToMap() {
-        // Array to collect bounds
+    function updateMapMarkers() {
+        markersLayer.clearLayers(); // Clear previous markers efficiently
         const bounds = [];
-        
-        // Add markers for each complaint
+        let visibleCount = 0;
+
         complaintsData.forEach(complaint => {
-            // Create marker with appropriate icon
             const marker = L.marker([complaint.lat, complaint.lng], {
-                icon: icons[complaint.status] || icons['Pending']
+                icon: icons[complaint.status] || icons['Default']
             });
-        
-            // Create popup content
-            const popupContent = `
-                <div class="complaint-info p-2 rounded">
-                    ${complaint.image_url ? `
-                    <div class="image-container mb-3 text-center">
-                        <img src="${complaint.image_url}" 
-                            alt="${complaint.type} complaint" 
-                            class="img-fluid rounded shadow-sm" 
-                            style="max-height: 180px; object-fit: cover; width: 100%;">
+
+             const popupContent = `
+                <div class="complaint-info">
+                     ${complaint.image_url ? `<div class="mb-2 text-center"><img src="${complaint.image_url}" alt="${complaint.type}" class="img-fluid rounded shadow-sm" style="max-height: 130px;"></div>` : ''}
+                    <h5>${complaint.type}</h5>
+                    <p class="mb-1"><strong>Status:</strong> <span class="badge rounded-pill ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
+                    <p class="mb-1"><strong>Ward:</strong> ${complaint.ward || 'N/A'}</p>
+                    <p class="mb-1"><small><strong>By:</strong> ${complaint.submitted_by}</small></p>
+                    <p class="mb-2"><small><strong>Date:</strong> ${complaint.date}</small></p>
+                    <div class="d-flex justify-content-between">
+                         <a href="${complaint.url}" class="btn btn-sm btn-outline-primary py-1 px-2">Details</a>
+                         <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" target="_blank" class="btn btn-sm btn-outline-secondary py-1 px-2">Directions</a>
                     </div>
-                    ` : ''}
-                    
-                    <h5>${complaint.type} Complaint</h5>
-                    <p><strong>Status:</strong> <span class="badge ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
-                    <p><strong>Ward:</strong> ${complaint.ward}</p>
-                    <p><strong>Date:</strong> ${complaint.date}</p>
-                    
-                    <a href="${complaint.url}" class="btn btn-sm btn-outline-primary">View Details</a>
-                    <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}"
-                    target="_blank" class="btn btn-sm btn-outline-primary">
-                    View on Google Maps
-                    </a>
-                </div>
-                `;
-            
-            // Add popup to marker
+                </div>`;
             marker.bindPopup(popupContent);
-            
-            // Add marker to map
-            marker.addTo(map);
-            
-            // Store marker for later reference
-            markers[complaint.id] = marker;
-            
-            // Add coordinates to bounds
+            markersLayer.addLayer(marker); // Add to the layer group
             bounds.push([complaint.lat, complaint.lng]);
+            visibleCount++;
         });
-        
-        // Fit map to bounds if there are markers
+
+        // Update count display
+        document.getElementById('visible-count').textContent = visibleCount;
+        document.getElementById('visible-count').parentElement.nextElementSibling.textContent = `of ${totalComplaintCount}`; // Update total part
+
+        // Fit map to bounds if markers exist
         if (bounds.length > 0) {
-            map.fitBounds(bounds);
+            map.fitBounds(bounds, { padding: [40, 40] }); // Increased padding
+        } else if (!map.getBounds().contains(L.latLng(22.3072, 73.1812))) {
+             // If no markers, and default center not visible, reset view
+             map.setView([22.3072, 73.1812], 11);
         }
     }
-    
-    // Helper function for status badge class
+
+    // Helper function for status badge class (MUST MATCH other templates)
     function getStatusBadgeClass(status) {
-        switch(status) {
-            case 'Pending': return 'bg-danger';
-            case 'In Progress': return 'bg-primary';
-            case 'Resolved': return 'bg-success';
-            default: return 'bg-secondary';
-        }
+        if (status === 'Pending') return 'bg-danger';
+        if (status === 'In Progress') return 'bg-primary';
+        if (status === 'Resolved') return 'bg-success';
+        return 'bg-secondary';
     }
-    
+
+    // Function to add legend
+    function addLegend() {
+        const legend = L.control({position: 'bottomleft'});
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            const statuses = ['Pending', 'In Progress', 'Resolved'];
+            let labels = ['<strong class="small">Status Legend</strong>'];
+            statuses.forEach(status => {
+                const color = iconColors[status] || '#808080';
+                labels.push(`<i style="background:${color}"></i> ${status}`);
+            });
+            div.innerHTML = labels.join('<br>');
+            return div;
+        };
+        legend.addTo(map);
+    }
+
     // Initialize the map when the page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Add all markers
-        addMarkersToMap();
-        
-        // Set up filter form auto-submit
-        document.getElementById('type-filter').addEventListener('change', function() {
-            document.getElementById('filter-form').submit();
-        });
-        document.getElementById('status-filter').addEventListener('change', function() {
-            document.getElementById('filter-form').submit();
-        });
-        document.getElementById('ward-filter').addEventListener('change', function() {
-            document.getElementById('filter-form').submit();
-        });
+        initializeMap();
+
+        // Set up filter form auto-submit (no client-side filtering here, view handles it)
+        document.getElementById('type-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
+        document.getElementById('status-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
+        document.getElementById('ward-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
     });
 </script>
 {% endblock %}

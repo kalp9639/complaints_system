@@ -166,9 +166,9 @@ COMPLAINT_SUBMISSION_LIMIT = 3  # Number of complaints allowed
 COMPLAINT_TIME_WINDOW = 5  # Time window in minutes
 
 # Session settings
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 2 weeks in seconds
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 1 weeks in seconds
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # Cookies settings
 CSRF_COOKIE_HTTPONLY = True
