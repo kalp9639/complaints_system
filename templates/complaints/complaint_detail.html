@@ -217,7 +217,7 @@
                                 <a href="{% url 'edit_complaint' complaint.id %}" class="btn btn-primary btn-sm">
                                   <i class="fas fa-pencil-alt me-1"></i> Edit Complaint
                                 </a>
-                                 <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#trashModal">
+                                 <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#trashModalDetail">
                                     <i class="fas fa-trash-alt me-1"></i> Move to Trash
                                   </button>
                              {% elif request.user == complaint.user and complaint.status == 'Resolved' %}
@@ -226,34 +226,45 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Trash Confirmation Modal (only for user) -->
-                {% if request.user == complaint.user and complaint.status != 'Resolved' %}
-                <div class="modal fade" id="trashModal" tabindex="-1" aria-labelledby="trashModalLabel" aria-hidden="true">
-                  <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title text-danger" id="trashModalLabel"><i class="fas fa-trash-alt me-2"></i>Confirm Move to Trash</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                      </div>
-                      <div class="modal-body">
-                        Are you sure you want to move this complaint to the trash bin?
-                        <p class="mt-2 text-muted small">Trashed items are automatically deleted after 7 days.</p>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form action="{% url 'trash_complaint' complaint.id %}" method="post" class="d-inline">
-                          {% csrf_token %}
-                          <button type="submit" class="btn btn-danger">Yes, Move to Trash</button>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {% endif %}
             {% endif %} {# End Action Card Condition #}
         </div> {# /sticky-top #}
     </div><!-- /col-lg-4 -->
   </div><!-- /row -->
 </div><!-- /container -->
+
+<!-- Trash Confirmation Modal (only for user) -->
+{% if request.user == complaint.user and complaint.status != 'Resolved' %}
+<div class="modal fade" id="trashModalDetail" tabindex="-1" aria-labelledby="trashModalDetailLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title" id="trashModalDetailLabel"><i class="fas fa-exclamation-triangle me-2"></i>Confirm Move to Trash</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to move this {{ complaint.get_complaint_type_display }} complaint (ID: {{ complaint.id }}) to the trash bin?
+        <p class="mt-2 text-muted small">Trashed items are automatically deleted after 7 days.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form action="{% url 'trash_complaint' complaint.id %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, Move to Trash</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Initialize any modals when the page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    // Bootstrap will automatically initialize the modals
+    // No additional setup required in modern Bootstrap
+  });
+</script>
 {% endblock %}

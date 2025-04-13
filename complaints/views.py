@@ -21,71 +21,90 @@ import json
 from django.conf import settings 
 from django.core.cache import cache 
 from django.http import JsonResponse
+import logging
 
-# Global variable to store the GeoDataFrame
-WARD_boundaries_gdf = None
+# Set up logging
+logger = logging.getLogger(__name__)
 
-def load_ward_boundaries():
-    """Loads the ward boundaries GeoDataFrame from the KML/KMZ file."""
-    global WARD_boundaries_gdf
-    if WARD_boundaries_gdf is None:  # Only load if it's not already loaded
+class WardBoundaryManager:
+    """Class to manage ward boundary data and operations"""
+    _instance = None  # Singleton instance
+    
+    def __new__(cls):
+        """Implement singleton pattern"""
+        if cls._instance is None:
+            cls._instance = super(WardBoundaryManager, cls).__new__(cls)
+            cls._instance._gdf = None  # Initialize GeoDataFrame to None
+            cls._instance.load_boundaries()  # Load boundaries on first instantiation
+        return cls._instance
+    
+    def load_boundaries(self):
+        """Load ward boundaries from KMZ file"""
         try:
             kmz_file = settings.WARD_BOUNDARY_KMZ_PATH
-            kml_file = extract_kml_from_kmz(kmz_file)
-            WARD_boundaries_gdf = load_kml_as_gdf(kml_file)
-            print("Ward boundaries loaded successfully.") #optional
+            kml_file = self._extract_kml_from_kmz(kmz_file)
+            self._gdf = self._load_kml_as_gdf(kml_file)
+            logger.info("Ward boundaries loaded successfully.")
         except Exception as e:
-            print(f"Error loading ward boundaries: {e}")
-            WARD_boundaries_gdf = None #Ensure None in case of failure
-            #Consider logging the error with Django's logging framework here
-
-def extract_kml_from_kmz(kmz_file):
-    # Create a temporary directory to extract files
-    temp_dir = tempfile.mkdtemp()
-
-    # Extract the KMZ file (which is essentially a ZIP file)
-    try:
-        with zipfile.ZipFile(kmz_file, 'r') as zip_ref:
-            zip_ref.extractall(temp_dir)
-    except zipfile.BadZipFile as e:
-        raise ValueError(f"Invalid KMZ file: {kmz_file}.  It may be corrupted. {e}")
-
-    # Find the KML file in the extracted contents
-    for file in os.listdir(temp_dir):
-        if file.endswith('.kml'):
-            return os.path.join(temp_dir, file)
-
-    # If no KML file was found
-    raise FileNotFoundError(f"No KML file found in the KMZ archive: {kmz_file}")
-
-
-def load_kml_as_gdf(kml_file):
-    # Use fiona driver to read KML
-    with fiona.Env():
-        # Sometimes KML files need specific driver settings
+            logger.error(f"Error loading ward boundaries: {e}")
+            self._gdf = None
+    
+    def _extract_kml_from_kmz(self, kmz_file):
+        """Extract KML file from KMZ archive"""
+        temp_dir = tempfile.mkdtemp()
+        
         try:
-            gdf = gpd.read_file(kml_file, driver='KML')
-        except fiona.errors.DriverError as e:
-             raise ValueError(f"Could not read KML file {kml_file}.  Ensure it is a valid KML format. {e}")
+            with zipfile.ZipFile(kmz_file, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+        except zipfile.BadZipFile as e:
+            raise ValueError(f"Invalid KMZ file: {kmz_file}. It may be corrupted. {e}")
+        
+        # Find the KML file in the extracted contents
+        for file in os.listdir(temp_dir):
+            if file.endswith('.kml'):
+                return os.path.join(temp_dir, file)
+        
+        # If no KML file was found
+        raise FileNotFoundError(f"No KML file found in the KMZ archive: {kmz_file}")
+    
+    def _load_kml_as_gdf(self, kml_file):
+        """Load KML file into GeoDataFrame"""
+        with fiona.Env():
+            try:
+                gdf = gpd.read_file(kml_file, driver='KML')
+                return gdf
+            except fiona.errors.DriverError as e:
+                raise ValueError(f"Could not read KML file {kml_file}. Ensure it is a valid KML format. {e}")
+    
+    def find_ward(self, lat, lon):
+        """Find the ward containing the given coordinates"""
+        if self._gdf is None:
+            logger.warning("Ward boundaries not loaded. Returning 'Unknown'.")
+            return "Unknown"
+        
+        # Create point from coordinates
+        point = Point(lon, lat)
+        
+        # Check if point is within any ward boundary
+        for _, row in self._gdf.iterrows():
+            if row.geometry.contains(point):
+                return row["Name"]
+        
+        return "Unknown"
+    
+    def reload_boundaries(self):
+        """Force reload of boundary data"""
+        self._gdf = None
+        self.load_boundaries()
+        return self._gdf is not None
+    
+    @property
+    def is_loaded(self):
+        """Check if boundaries are loaded"""
+        return self._gdf is not None
 
-    return gdf
-
-
-# Load the ward boundaries when the module is initialized (or on server start)
-load_ward_boundaries()
-
-def find_ward(lat, lon):
-    """Finds the ward name for a given latitude and longitude"""
-    global WARD_boundaries_gdf #use the global variable
-    if WARD_boundaries_gdf is None:
-         print("Ward boundaries not loaded. Returning 'Unknown'.")
-         return "Unknown"
-
-    point = Point(lon, lat)
-    for _, row in WARD_boundaries_gdf.iterrows():
-        if row.geometry.contains(point):
-            return row["Name"]
-    return "Unknown"
+# Initialize the ward boundary manager
+ward_manager = WardBoundaryManager()
 
 @login_required
 def get_ward_from_coordinates(request):
@@ -94,18 +113,24 @@ def get_ward_from_coordinates(request):
         lat = float(request.GET.get('lat', 0))
         lng = float(request.GET.get('lng', 0))
         
-        ward = find_ward(lat, lng)
+        ward = ward_manager.find_ward(lat, lng)
         
         return JsonResponse({
             'success': True,
             'ward': ward
         })
     except Exception as e:
+        logger.error(f"Error finding ward: {e}")
         return JsonResponse({
             'success': False,
             'ward': 'Unknown',
             'error': str(e)
         })
+
+# Update the find_ward function to use the manager
+def find_ward(lat, lon):
+    """Finds the ward name for a given latitude and longitude"""
+    return ward_manager.find_ward(lat, lon)
 
 @method_decorator(login_required, name='dispatch')
 class ComplaintCreateView(CreateView):

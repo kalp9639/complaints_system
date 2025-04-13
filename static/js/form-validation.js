@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '123123', 'baseball', 'abc123', 'football', 'monkey', 
         'letmein', '696969', 'shadow', 'master', '666666', 
         'qwertyuiop', '123321', 'mustang', '1234567890', 'michael', 
-        '654321', 'superman', '1qaz2wsx', '7777777', 'pussy', 
+        '654321', 'superman', '1qaz2wsx', '7777777', 
         'batman', 'trustno1', 'welcome', 'admin', 'access',
         'passw0rd', 'p@ssw0rd', 'password1', 'Password', 'Password1',
         'asdfgh', 'asdfghjkl', 'zxcvbnm', 'sunshine', 'iloveyou'
