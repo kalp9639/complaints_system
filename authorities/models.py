@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from complaints.models import Complaint
+from storage_backends import MediaStorage
 
 class GovernmentOfficial(models.Model):
     """
@@ -30,7 +31,7 @@ class ComplaintUpdate(models.Model):
     official = models.ForeignKey(GovernmentOfficial, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
     update_description = models.TextField(blank=True, null=True)
-    proof_image = models.ImageField(upload_to='complaint_updates/', blank=False, null=False)
+    proof_image = models.ImageField(upload_to='complaint_updates/', storage=MediaStorage(), blank=False, null=False)
     updated_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):

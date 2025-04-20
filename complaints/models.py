@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
 import os
+from storage_backends import MediaStorage
 
 class Complaint(models.Model):
     COMPLAINT_TYPES = (
@@ -15,7 +16,7 @@ class Complaint(models.Model):
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='complaints')
     complaint_type = models.CharField(max_length=10, choices=COMPLAINT_TYPES)
-    image = models.ImageField(upload_to='complaints/')
+    image = models.ImageField(upload_to='complaints/',storage=MediaStorage())
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, default='Pending', 

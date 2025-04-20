@@ -132,9 +132,10 @@
 
     let map;
     let markersLayer = L.layerGroup(); // Use a layer group for easy clearing
+    const complaintTypes = new Set(); // Added: to store unique complaint types
 
     // Icons for different statuses (ensure full URLs)
-     const icons = {
+    const icons = {
         'Pending': L.icon({
             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
@@ -151,12 +152,12 @@
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         }),
         'Default': L.icon({ // Fallback icon
-             iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
             shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
             iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
         })
     };
-     const iconColors = { // For legend
+    const iconColors = { // For legend
         'Pending': '#d32f2f', 'In Progress': '#1976d2', 'Resolved': '#388e3c'
     };
 
@@ -165,16 +166,23 @@
         let initialCenter = [22.3072, 73.1812]; // Default Vadodara
         let initialZoom = 12;
 
-         // Attempt to center based on available data
-         if (complaintsData.length > 0) {
+        // Extract all unique complaint types from the data
+        complaintsData.forEach(complaint => {
+            if (complaint.type) {
+                complaintTypes.add(complaint.type);
+            }
+        });
+
+        // Attempt to center based on available data
+        if (complaintsData.length > 0) {
             let avgLat = 0; let avgLng = 0;
             complaintsData.forEach(c => { avgLat += c.lat; avgLng += c.lng; });
             initialCenter = [avgLat / complaintsData.length, avgLng / complaintsData.length];
             // Basic zoom level adjustment - could be more sophisticated
             initialZoom = (complaintsData.length > 1) ? 13 : 15;
-         } else {
-             initialZoom = 11; // Zoom out slightly if no complaints initially
-         }
+        } else {
+            initialZoom = 11; // Zoom out slightly if no complaints initially
+        }
 
         map = L.map('map', { zoomControl: false }).setView(initialCenter, initialZoom);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -183,50 +191,103 @@
         L.control.zoom({ position: 'bottomright' }).addTo(map);
         markersLayer.addTo(map); // Add the layer group
         addLegend();
+        populateTypeFilter(); // Added: populate the type filter dropdown
         updateMapMarkers(); // Add markers based on initial data
     }
 
-    // Function to add markers
+    // Function to populate the type filter dropdown
+    function populateTypeFilter() {
+        const typeFilter = document.getElementById('type-filter');
+        const selectedTypeValue = typeFilter.value; // Preserve currently selected value if any
+        
+        // Clear existing options (except the first "All Types" option)
+        while (typeFilter.options.length > 1) {
+            typeFilter.remove(1);
+        }
+        
+        // Sort types alphabetically before adding
+        const sortedTypes = Array.from(complaintTypes).sort();
+        
+        // Add options for each complaint type
+        sortedTypes.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            if (type == selectedTypeValue) {
+                option.selected = true;
+            }
+            typeFilter.appendChild(option);
+        });
+    }
+
+    // Function to add markers with client-side filtering
     function updateMapMarkers() {
         markersLayer.clearLayers(); // Clear previous markers efficiently
         const bounds = [];
         let visibleCount = 0;
-
+        
+        // Get filter values
+        const typeFilter = document.getElementById('type-filter').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const wardFilter = document.getElementById('ward-filter').value;
+        
+        // Apply filters to the data
         complaintsData.forEach(complaint => {
-            const marker = L.marker([complaint.lat, complaint.lng], {
-                icon: icons[complaint.status] || icons['Default']
-            });
+            if (
+                (!typeFilter || String(complaint.type) === String(typeFilter)) &&
+                (!statusFilter || complaint.status == statusFilter) &&
+                (!wardFilter || String(complaint.ward) == String(wardFilter))
+            ) {
+                const marker = L.marker([complaint.lat, complaint.lng], {
+                    icon: icons[complaint.status] || icons['Default']
+                });
 
-             const popupContent = `
-                <div class="complaint-info">
-                     ${complaint.image_url ? `<div class="mb-2 text-center"><img src="${complaint.image_url}" alt="${complaint.type}" class="img-fluid rounded shadow-sm" style="max-height: 130px;"></div>` : ''}
-                    <h5>${complaint.type}</h5>
-                    <p class="mb-1"><strong>Status:</strong> <span class="badge rounded-pill ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
-                    <p class="mb-1"><strong>Ward:</strong> ${complaint.ward || 'N/A'}</p>
-                    <p class="mb-1"><small><strong>By:</strong> ${complaint.submitted_by}</small></p>
-                    <p class="mb-2"><small><strong>Date:</strong> ${complaint.date}</small></p>
-                    <div class="d-flex justify-content-between">
-                         <a href="${complaint.url}" class="btn btn-sm btn-outline-primary py-1 px-2">Details</a>
-                         <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" target="_blank" class="btn btn-sm btn-outline-secondary py-1 px-2">Directions</a>
-                    </div>
-                </div>`;
-            marker.bindPopup(popupContent);
-            markersLayer.addLayer(marker); // Add to the layer group
-            bounds.push([complaint.lat, complaint.lng]);
-            visibleCount++;
+                const popupContent = `
+                    <div class="complaint-info">
+                        ${complaint.image_url ? `<div class="mb-2 text-center"><img src="${complaint.image_url}" alt="${complaint.type}" class="img-fluid rounded shadow-sm" style="max-height: 130px;"></div>` : ''}
+                        <h5>${complaint.type}</h5>
+                        <p class="mb-1"><strong>Status:</strong> <span class="badge rounded-pill ${getStatusBadgeClass(complaint.status)}">${complaint.status}</span></p>
+                        <p class="mb-1"><strong>Ward:</strong> ${complaint.ward || 'N/A'}</p>
+                        <p class="mb-1"><small><strong>By:</strong> ${complaint.submitted_by}</small></p>
+                        <p class="mb-2"><small><strong>Date:</strong> ${complaint.date}</small></p>
+                        <div class="d-flex justify-content-between">
+                            <a href="${complaint.url}" class="btn btn-sm btn-outline-primary py-1 px-2">Details</a>
+                            <a href="https://www.google.com/maps?q=${complaint.lat},${complaint.lng}" target="_blank" class="btn btn-sm btn-outline-secondary py-1 px-2">Directions</a>
+                        </div>
+                    </div>`;
+                marker.bindPopup(popupContent);
+                markersLayer.addLayer(marker); // Add to the layer group
+                bounds.push([complaint.lat, complaint.lng]);
+                visibleCount++;
+            }
         });
 
         // Update count display
         document.getElementById('visible-count').textContent = visibleCount;
-        document.getElementById('visible-count').parentElement.nextElementSibling.textContent = `of ${totalComplaintCount}`; // Update total part
+        
+        // Update filtered status
+        const isFiltered = typeFilter || statusFilter || wardFilter;
+        const filterLink = document.querySelector('.alert a');
+        if (filterLink) {
+            filterLink.style.display = isFiltered ? '' : 'none';
+        }
 
         // Fit map to bounds if markers exist
         if (bounds.length > 0) {
             map.fitBounds(bounds, { padding: [40, 40] }); // Increased padding
         } else if (!map.getBounds().contains(L.latLng(22.3072, 73.1812))) {
-             // If no markers, and default center not visible, reset view
-             map.setView([22.3072, 73.1812], 11);
+            // If no markers, and default center not visible, reset view
+            map.setView([22.3072, 73.1812], 11);
         }
+    }
+
+    // Function to reset all filters and update map
+    function resetFilters(e) {
+        if (e) e.preventDefault();
+        document.getElementById('type-filter').value = '';
+        document.getElementById('status-filter').value = '';
+        document.getElementById('ward-filter').value = '';
+        updateMapMarkers();
     }
 
     // Helper function for status badge class (MUST MATCH other templates)
@@ -258,10 +319,19 @@
     document.addEventListener('DOMContentLoaded', function() {
         initializeMap();
 
-        // Set up filter form auto-submit (no client-side filtering here, view handles it)
-        document.getElementById('type-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
-        document.getElementById('status-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
-        document.getElementById('ward-filter')?.addEventListener('change', () => document.getElementById('filter-form').submit());
+        // Set up event listeners for filter changes
+        document.getElementById('type-filter')?.addEventListener('change', updateMapMarkers);
+        document.getElementById('status-filter')?.addEventListener('change', updateMapMarkers);
+        document.getElementById('ward-filter')?.addEventListener('change', updateMapMarkers);
+        
+        // Prevent form submission to avoid page reload
+        document.getElementById('filter-form')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            updateMapMarkers();
+        });
+        
+        // Handle "Reset Filters" link
+        document.querySelector('a[href="{% url 'map_view' %}"]')?.addEventListener('click', resetFilters);
     });
 </script>
 {% endblock %}
