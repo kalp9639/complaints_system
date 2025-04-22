@@ -11,6 +11,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView
 from django.urls import reverse_lazy, reverse
 from .models import Complaint
 from .forms import ComplaintForm
+from django.utils.dateformat import format
 import geopandas as gpd
 from shapely.geometry import Point
 import os
@@ -300,7 +301,7 @@ class MapView(View):
                 'url': f'/complaints/detail/{complaint.id}/',  # URL to complaint details
                 'ward': complaint.ward_number or 'Unknown',
                 'submitted_by': complaint.user.get_full_name() or complaint.user.username,
-                'date': complaint.created_at.strftime('%Y-%m-%d %H:%M'),
+                'created_at': complaint.created_at.isoformat(),  # Pass the timestamp as ISO format
                 'image_url': complaint.image.url if complaint.image else None,
             })
 
