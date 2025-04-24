@@ -1,11 +1,2 @@
-# nixpacks.toml
-
 [phases.setup]
-aptPkgs = ["libzbar0"]
-
-# You might also need build tools if pyzbar compiles something, though often not
-# aptPkgs = ["libzbar0", "build-essential"]
-
-# Optional: Define the start command here if you prefer it over Procfile
-# [start]
-# cmd = "gunicorn complaints_system.wsgi --bind 0.0.0.0:$PORT --log-file -"
+aptPkgs = ["libzbar0", "zbar-tools"]
