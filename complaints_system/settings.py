@@ -34,7 +34,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'complaintssystem-production.up.railway.app']
 
-CSRF_TRUSTED_ORIGINS = ['complaintssystem-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://complaintssystem-production.up.railway.app']
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -193,7 +193,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 # Cookies settings
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = True  # Set to True in production with HTTPS
 
 # Django Celery settings
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
