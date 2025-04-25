@@ -33,12 +33,6 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-LOGGING['loggers']['django.request'] = {
-    'handlers': ['console'],
-    'level': 'DEBUG',
-    'propagate': True,
-}
-
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'complaintssystem-production.up.railway.app', '*']
 
 CSRF_TRUSTED_ORIGINS = ['https://complaintssystem-production.up.railway.app']
@@ -258,6 +252,12 @@ LOGGING = {
             'propagate': True,
         },
     },
+}
+
+LOGGING['loggers']['django.request'] = {
+    'handlers': ['console'],
+    'level': 'DEBUG',
+    'propagate': True,
 }
 
 # Authentication Backends
