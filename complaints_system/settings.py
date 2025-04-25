@@ -8,6 +8,7 @@ import os
 from django.conf import settings
 from dotenv import load_dotenv
 from django.contrib.messages import constants as messages
+import logging
 
 MESSAGE_TAGS = {
     messages.DEBUG: 'info',
