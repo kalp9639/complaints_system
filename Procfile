@@ -1,2 +1,2 @@
 release: apt-get update && apt-get install -y libzbar0 && python manage.py migrate --noinput && python manage.py collectstatic --noinput
-web: gunicorn complaints_system.wsgi --bind 0.0.0.0:$PORT --log-file -
+gunicorn complaints_system.wsgi:application --bind 0.0.0.0:8000 --log-level debug
